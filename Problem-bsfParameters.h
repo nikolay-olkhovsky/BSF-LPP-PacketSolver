@@ -18,12 +18,3 @@ This source code has been produced with using BSF-skeleton
 //--------------------------- OpenMP Parameters ---------------------------
 //#define PP_BSF_OMP				// If PP_BSF_OMP is defined then OpenMP is turned on for Map Step
 #define PP_BSF_NUM_THREADS 12	// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used
-//=========================== Skeleton Variables =========================
-static int PP_BSF_addressOffset;
-static int PP_BSF_iterCounter;
-static int PP_BSF_jobCase;
-static void* PP_BSF_mapSubList;
-static int PP_BSF_mpiRank;
-static int PP_BSF_numberInSublist;
-static int PP_BSF_numOfWorkers;
-static int PP_BSF_sublistLength;

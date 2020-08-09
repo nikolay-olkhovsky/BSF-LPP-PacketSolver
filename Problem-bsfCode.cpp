@@ -6,11 +6,18 @@ Prefix: PI
 Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
-#include "Problem-bsfParameters.h"	// Predefined Problem Parameters
 #include "Problem-Data.h"			// Problem Types 
 #include "Problem-Forwards.h"		// Problem Function Forwards
-#include "BSF-VariableAccess.h"
 using namespace std;
+
+//----------------------- Access to BSF-skeleton parameters  -----------------
+void PC_bsf_AssignAddressOffset(int value) { PP_BSF_addressOffset = value; };
+void PC_bsf_AssignIterCounter(int value) { PP_BSF_iterCounter = value; };
+void PC_bsf_AssignJobCase(int value) { PP_BSF_jobCase = value; };
+void PC_bsf_AssignMpiRank(int value) { PP_BSF_mpiRank = value; };
+void PC_bsf_AssignNumberInSublist(int value) { PP_BSF_numberInSublist = value; };
+void PC_bsf_AssignNumOfWorkers(int value) { PP_BSF_numOfWorkers = value; };
+void PC_bsf_AssignSublistLength(int value) { PP_BSF_sublistLength = value; };
 
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PP_N; j++) // Generating initial approximation

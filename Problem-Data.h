@@ -6,6 +6,16 @@ Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 #include "Problem-Types.h"		// Problem Parameters 
+
+//=========================== Variables for BSF-skeleton Parameters =========================
+static int PP_BSF_addressOffset;
+static int PP_BSF_iterCounter;
+static int PP_BSF_jobCase;
+static int PP_BSF_mpiRank;
+static int PP_BSF_numberInSublist;
+static int PP_BSF_numOfWorkers;
+static int PP_BSF_sublistLength;
+
 //========================== Problem variables ====================================
 static double PD_siftLength;		// Shift length
 //========================== Problem structures ====================================
