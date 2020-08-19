@@ -8,16 +8,8 @@ This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 #include "Problem-Data.h"			// Problem Types 
 #include "Problem-Forwards.h"		// Problem Function Forwards
+#include "BSF-SkeletonVariables.h"	// Skeleton Variables
 using namespace std;
-
-//----------------------- Access to BSF-skeleton parameters  -----------------
-void PC_bsf_AssignAddressOffset(int value) { PP_BSF_addressOffset = value; };
-void PC_bsf_AssignIterCounter(int value) { PP_BSF_iterCounter = value; };
-void PC_bsf_AssignJobCase(int value) { PP_BSF_jobCase = value; };
-void PC_bsf_AssignMpiRank(int value) { PP_BSF_mpiRank = value; };
-void PC_bsf_AssignNumberInSublist(int value) { PP_BSF_numberInSublist = value; };
-void PC_bsf_AssignNumOfWorkers(int value) { PP_BSF_numOfWorkers = value; };
-void PC_bsf_AssignSublistLength(int value) { PP_BSF_sublistLength = value; };
 
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PP_N; j++) // Generating initial approximation
@@ -43,7 +35,7 @@ void PC_bsf_Init(bool* success) {
 	Vector_PlusEquals(PD_apex, PD_basePoint);
 
 	if (PD_apex[PP_N - 1] < PP_SF * 1.1) {
-		if (PP_BSF_mpiRank == 0)
+		if (BSF_sv_mpiRank == 0)
 			cout << "PC_bsf_Init.Error: PD_apex[PP_N - 1] = " << PD_apex[PP_N - 1] << " < PP_SF * 1.1 = " << PP_SF * 1.1 << endl;
 		*success = false;
 		return;
@@ -79,7 +71,7 @@ void PC_bsf_Init(bool* success) {
 			PD_normSquare_a[i] += PD_A[i][j] * PD_A[i][j];
 	};
 	
-	/* debug *//* if (PP_BSF_mpiRank == 0) {
+	/* debug *//* if (BSF_sv_mpiRank == 0) {
 		cout << "----------PC_bsf_Init-------------" << endl;
 		for (int i = 0; i < PP_M; i++)
 			cout << "InequalityNo = " << i << "\tNorm Square = " << PD_normSquare_a[i] << endl;
@@ -87,24 +79,18 @@ void PC_bsf_Init(bool* success) {
 	};/* end debug */
 };
 
-void PC_bsf_AssignListSize(int* listSize) {
+void PC_bsf_SetListSize(int* listSize) {
 	*listSize = PP_M;
 };
 
-void PC_bsf_CopyParameter(PT_bsf_parameter_T* parameterIn, PT_bsf_parameter_T* parameterOut) {
-	for (int j = 0; j < PP_N; j++) {
-		parameterOut->x[j] = parameterIn->x[j];
-	};
-};
-
-void PC_bsf_SetMapSubList(PT_bsf_mapElem_T* sublist, int sublistLength, int offset, bool* success) {
+void PC_bsf_SetMapSubList(PT_bsf_mapElem_T* sublist, int sublistLength, int offset) {
 	//*debug*/int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank); cout << rank << ":=========>PC_bsf_SetMapSubList: sublistLength = " << sublistLength << "\toffset = " << offset << endl; cout.flush();
 	for (int i = 0; i < sublistLength; i++) {
 		/* debug */// { if (i >= PP_M) exit(13); }
 		sublist[i].inequalityNo = offset + i;
 	};
-	/* debug *//* if (PP_BSF_mpiRank == 0) {
-		cout << PP_BSF_mpiRank << ":----------PC_bsf_SetMapSubList-------------" << endl;
+	/* debug *//* if (BSF_sv_mpiRank == 0) {
+		cout << BSF_sv_mpiRank << ":----------PC_bsf_SetMapSubList-------------" << endl;
 		for (int i = 0; i < sublistLength; i++) {
 			cout << "Inequality No = " << sublist[i].inequalityNo << "\tNot feasible = " << sublist[i].notFeasible << endl;
 		};
@@ -112,17 +98,12 @@ void PC_bsf_SetMapSubList(PT_bsf_mapElem_T* sublist, int sublistLength, int offs
 	};/* end debug */
 };
 
-void PC_bsf_SetParameter(PT_bsf_parameter_T* parameter) {
-	for (int j = 0; j < PP_N; j++)
-		PD_x[j] = parameter->x[j];
-};
-
 // 0. Apex Pseudo-pojection
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int* success // 1 - reduceElem was produced successfully; 0 - otherwise
 ){
 	double factor;
 
-	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(PD_x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
+	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(BSF_sv_parameter.x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
 
 	if (factor > 0)
 		*success = false;
@@ -132,7 +113,7 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 			/* debug */// { if (mapElem->inequalityNo >= PP_M || mapElem->inequalityNo < 0) exit(13); }
 		}
 
-	/* debug *//* if (PP_BSF_mpiRank == 0) {
+	/* debug *//* if (BSF_sv_mpiRank == 0) {
 		cout << "Hyperplane No = " << mapElem->inequalityNo << "\tProjection: ";
 		if (factor >= 0)
 			cout << "\tsuccess = false" << endl;
@@ -152,7 +133,7 @@ void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem,
 
 // 1. Movement on Polytope
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem,int* success) {
-	if (PointIn(PD_x, mapElem->inequalityNo))
+	if (PointIn(BSF_sv_parameter.x, mapElem->inequalityNo))
 		reduceElem->pointIn = true;
 	else
 		reduceElem->pointIn = false;
@@ -162,15 +143,15 @@ void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem,
 void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem,int* success) {
 	double factor;
 
-	/* debug *//*  if (PP_BSF_mpiRank == 0) {
+	/* debug *//*  if (BSF_sv_mpiRank == 0) {
 		cout << "PC_bsf_MapF_2: parameter->x:";
 		for (int j = 0; j < PP_N; j++)
-			cout << setw(20) << PD_x[j];
+			cout << setw(20) << BSF_sv_parameter.x[j];
 		cout << endl;
 		//system("pause");
 	} /* end debug */
 
-	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(PD_x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
+	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(BSF_sv_parameter.x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
 
 	if (factor > 0)
 		*success = false;
@@ -179,8 +160,8 @@ void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem,
 			reduceElem->projection[j] = factor * PD_A[mapElem->inequalityNo][j];
 		}
 
-	/* debug *//* if (PP_BSF_mpiRank == 0) {
-		cout << PP_BSF_mpiRank << "------------ > PC_bsf_ProcessResults_2------------ >" << endl;
+	/* debug *//* if (BSF_sv_mpiRank == 0) {
+		cout << BSF_sv_mpiRank << "------------ > PC_bsf_ProcessResults_2------------ >" << endl;
 		cout << "Hyperplane No = " << mapElem->inequalityNo << "\tProjection: ";
 		if (factor >= 0)
 			cout << "\tsuccess = false" << endl;
@@ -203,27 +184,21 @@ void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf
 	// not used
 }
 
-// 1. Movement on Polytope
-void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
-	z->pointIn = x->pointIn && y->pointIn;
-}
-
-// 2. Point Pseudo-projection
-void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
-	Vector_Addition(x->projection, y->projection, z->projection);
-}
-
 //0. Apex pseudo-projection onto Politope
-void PC_bsf_ProcessResults(bool* exit, PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T* parameter, int* jobCase
+void PC_bsf_ProcessResults(
+	PT_bsf_reduceElem_T* reduceResult,
+	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* nextJob,
+	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
 ) {
 #ifdef PP_DEBUG
 	if (PD_caseApexPojection) {
 		cout << "------------> 0: APEX POJECTION  -------------->" << endl;
 		PD_caseApexPojection = false;
 	}
-	/* debug */// if (PP_BSF_iterCounter > 20000) *exit = true; return;
+	/* debug */// if (BSF_sv_iterCounter > 20000) *exit = true; return;
 #endif // PP_DEBUG
-
 
 	/* debug *//* for (int j = 0; j < PP_N; j++)
 		parameter->x[j] = 200;
@@ -253,8 +228,8 @@ void PC_bsf_ProcessResults(bool* exit, PT_bsf_reduceElem_T* reduceResult, int re
 	/* end debug */
 
 #ifdef PP_MAX_ITER_COUNT
-	if (PP_BSF_iterCounter > PP_MAX_ITER_COUNT) {
-		cout << "-------------> PC_bsf_ProcessResults: Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = " 
+	if (BSF_sv_iterCounter > PP_MAX_ITER_COUNT) {
+		cout << "-------------> PC_bsf_ProcessResults: Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = "
 			<< PP_MAX_ITER_COUNT << endl;
 		*exit = true;
 		return;
@@ -265,7 +240,7 @@ void PC_bsf_ProcessResults(bool* exit, PT_bsf_reduceElem_T* reduceResult, int re
 	Vector_Relaxation(reduceResult->projection, reduceCounter, relaxationVector);
 	Vector_PlusEquals(parameter->x, relaxationVector);
 
-	if (Vector_NormSquare(relaxationVector) < PP_EPS_RELAX * PP_EPS_RELAX) 
+	if (Vector_NormSquare(relaxationVector) < PP_EPS_RELAX * PP_EPS_RELAX)
 	{
 		Vector_Round(parameter->x);
 
@@ -286,7 +261,7 @@ void PC_bsf_ProcessResults(bool* exit, PT_bsf_reduceElem_T* reduceResult, int re
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_PlusEquals(parameter->x, objectiveVector);
 
-		*jobCase = PP_CASE_POINT_PSEUDOPROJECTION;
+		*nextJob = PP_CASE_POINT_PSEUDOPROJECTION;
 
 #ifdef PP_DEBUG
 		PD_casePointProjection = true;
@@ -300,21 +275,43 @@ void PC_bsf_ProcessResults(bool* exit, PT_bsf_reduceElem_T* reduceResult, int re
 	};
 }
 
-void PC_bsf_ProcessResults_3(bool* exit, PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter, PT_bsf_parameter_T* parameter, int* jobCase) {
+// 1. Movement on Polytope
+void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
+	z->pointIn = x->pointIn && y->pointIn;
+}
+
+// 2. Point Pseudo-projection
+void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
+	Vector_Addition(x->projection, y->projection, z->projection);
+}
+
+void PC_bsf_ProcessResults_3(
+	PT_bsf_reduceElem_T_3* reduceResult,
+	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* nextJob,
+	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
+) {
 	// not used
 }
 
 // 1. Movement on Polytope  ========================================================
-void PC_bsf_ProcessResults_1(bool* exit, PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T* parameter, int* jobCase) {
+void PC_bsf_ProcessResults_1(
+	PT_bsf_reduceElem_T_1* reduceResult,
+	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* nextJob,
+	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
+) {
 #ifdef PP_DEBUG
 	if (PD_caseMovementOnPlytope) {
 		cout << "=================> 1: MOVEMENT ON PLYTOPE  =================>" << endl;
 		PD_caseMovementOnPlytope = false;
-		/* debug */// if (PP_BSF_iterCounter > 20000) *exit = true; return;
+		/* debug */// if (BSF_sv_iterCounter > 20000) *exit = true; return;
 	}
 #endif // PP_DEBUG
 #ifdef PP_MAX_ITER_COUNT
-	if (PP_BSF_iterCounter > PP_MAX_ITER_COUNT) {
+	if (BSF_sv_iterCounter > PP_MAX_ITER_COUNT) {
 		cout << "-------------> Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = " << PP_MAX_ITER_COUNT << endl;
 		*exit = true;
 		return;
@@ -345,7 +342,7 @@ void PC_bsf_ProcessResults_1(bool* exit, PT_bsf_reduceElem_T_1* reduceResult, in
 	cout << endl;
 #endif // PP_DEBUG
 
-	*jobCase = PP_CASE_POINT_PSEUDOPROJECTION;
+	* nextJob = PP_CASE_POINT_PSEUDOPROJECTION;
 	Vector_Round(PD_basePoint);
 
 #ifdef PP_DEBUG
@@ -362,17 +359,23 @@ void PC_bsf_ProcessResults_1(bool* exit, PT_bsf_reduceElem_T_1* reduceResult, in
 }
 
 // 2. Point Pseudo-projection  ========================================================
-void PC_bsf_ProcessResults_2(bool* exit, PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T* parameter, int* jobCase) {
+void PC_bsf_ProcessResults_2(
+	PT_bsf_reduceElem_T_2* reduceResult,
+	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* nextJob,
+	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
+) {
 #ifdef PP_DEBUG
 	if (PD_casePointProjection) {
 		cout << "=================> 2: POINT PSEUDO-PROJECTION  =================>" << endl;
 		PD_casePointProjection = false;
 	}
-	/* debug */// if (PP_BSF_iterCounter > 20000) *exit = true; return;
+	/* debug */// if (BSF_sv_iterCounter > 20000) *exit = true; return;
 #endif // PP_DEBUG
 
 #ifdef PP_MAX_ITER_COUNT
-	if (PP_BSF_iterCounter > PP_MAX_ITER_COUNT) {
+	if (BSF_sv_iterCounter > PP_MAX_ITER_COUNT) {
 		cout << "-------------> Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = " << PP_MAX_ITER_COUNT << endl;
 		*exit = true;
 		return;
@@ -439,7 +442,7 @@ void PC_bsf_ProcessResults_2(bool* exit, PT_bsf_reduceElem_T_2* reduceResult, in
 		PD_siftLength = PP_START_SHIFT_LENGTH;
 		Shift(PD_basePoint, PD_direction, PD_siftLength, parameter->x);
 
-		*jobCase = PP_CASE_MOVEMENT_ON_POLYTOPE;
+		*nextJob = PP_CASE_MOVEMENT_ON_POLYTOPE;
 		PD_caseMovementOnPlytope = true;
 		return;
 	}
@@ -451,9 +454,9 @@ void PC_bsf_ProcessResults_2(bool* exit, PT_bsf_reduceElem_T_2* reduceResult, in
 	*exit = true; return;
 }
 
-void PC_bsf_ParametersOutput(int numOfWorkers, PT_bsf_parameter_T parameter) {
+void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== Quest & Target ====================================================" << endl;
-	cout << "Number of Workers: " << numOfWorkers << endl;
+	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
 	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
@@ -498,10 +501,15 @@ void PC_bsf_ParametersOutput(int numOfWorkers, PT_bsf_parameter_T parameter) {
 	cout << "-------------------------------------------" << endl;
 };
 
+void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
+	for (int i = 0; i < PP_N; i++)
+		parameterOutP->x[i] = parameterIn.x[i];
+};
+
 // 0. Apex Pseudo-pojection  ==========================================================
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
-	double elapsedTime, int newJobCase) {
-	cout << "------------------ 0. Apex Pseudo-pojection. Iter # " << PP_BSF_iterCounter << " -------------------" << endl;
+	double elapsedTime, int nextJob) {
+	cout << "------------------ 0. Apex Pseudo-pojection. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(20) << parameter.x[j]; 
@@ -510,16 +518,16 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 };
 
 void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
-	double elapsedTime, int newJobCase)
+	double elapsedTime, int nextJob)
 {
 	// not used
 }
 
 // 1. Movement on Polytope
 void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
-	double elapsedTime, int newJobCase)
+	double elapsedTime, int nextJob)
 {
-	cout << "------------------ 1. Movement on Polytope. Iter # " << PP_BSF_iterCounter << " ------------------" << endl;
+	cout << "------------------ 1. Movement on Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
@@ -536,9 +544,9 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 
 // 2. Point Pseudo-projection
 void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
-	double elapsedTime, int newJobCase)
+	double elapsedTime, int nextJob)
 {
-	cout << "------------------ 2. Point Pseudo-projection. Iter # " << PP_BSF_iterCounter << " ------------------" << endl;
+	cout << "------------------ 2. Point Pseudo-projection. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "parameter.x :";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
@@ -551,7 +559,7 @@ void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter,
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {
 	cout << "=============================================" << endl;
 	cout << "Time: " << t << endl;
-	cout << "Iterations: " << PP_BSF_iterCounter << endl;
+	cout << "Iterations: " << BSF_sv_iterCounter << endl;
 	cout << "Solution:"; for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(20) << parameter.x[j]; 
 	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(20) << parameter.x[PP_N - 1];
 	cout << endl;
@@ -564,7 +572,7 @@ void PC_bsf_ProblemOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCount
 // 1. Movement on Polytope
 void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,double t) {
 	cout << "Time: " << t << endl;
-	cout << "Iterations: " << PP_BSF_iterCounter << endl;
+	cout << "Iterations: " << BSF_sv_iterCounter << endl;
 	cout << "Solution: ";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(5) << round(PD_basePoint[j]);
 	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(20) << round(PD_basePoint[PP_N - 1]);
@@ -574,12 +582,24 @@ void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCount
 void PC_bsf_ProblemOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,double t) {
 	cout << "=============================================" << endl;
 	cout << "Time: " << t << endl;
-	cout << "Iterations: " << PP_BSF_iterCounter << endl;
+	cout << "Iterations: " << BSF_sv_iterCounter << endl;
 	cout << "Solution: "; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(5) << round(PD_basePoint[j]); 
 	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(20) << round(PD_basePoint[PP_N - 1]);
 }
 
+
+//----------------------- Assigning Values to BSF-skeleton Variables (Do not modify!) -----------------------
+void PC_bsfAssignAddressOffset(int value) { BSF_sv_addressOffset = value; };
+void PC_bsfAssignIterCounter(int value) { BSF_sv_iterCounter = value; };
+void PC_bsfAssignJobCase(int value) { BSF_sv_jobCase = value; };
+void PC_bsfAssignMpiRank(int value) { BSF_sv_mpiRank = value; };
+void PC_bsfAssignNumberInSublist(int value) { BSF_sv_numberInSublist = value; };
+void PC_bsfAssignNumOfWorkers(int value) { BSF_sv_numOfWorkers = value; };
+void PC_bsfAssignParameter(PT_bsf_parameter_T parameter) { PC_bsf_CopyParameter(parameter, &BSF_sv_parameter); }
+void PC_bsfAssignSublistLength(int value) { BSF_sv_sublistLength = value; };
+
+//---------------------------------- Problem functions -------------------------
 static double Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 	double sum = 0;
 	for (int j = 0; j < PP_N; j++)
@@ -607,7 +627,7 @@ static void Projection(PT_vector_T point, int hyperplaneNo, double normSquare, P
 	for (int j = 0; j < PP_N; j++)
 		projection[j] = point[j] + factor * PD_A[hyperplaneNo][j];
 
-	/* debug *//* if (PP_BSF_mpiRank == 0) {
+	/* debug *//* if (BSF_sv_mpiRank == 0) {
 		cout << "---------- Projection -------------" << endl;
 		cout << "point: ";
 		for (int j = 0; j < PP_N; j++)

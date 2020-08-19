@@ -6,7 +6,6 @@ Prefix: PP
 Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
-#pragma once
 //=========================== Problem Parameters =========================
 #define PP_N 8				// Dimension of Space
 #define PP_M (2*PP_N+2)		// Number of inequations
