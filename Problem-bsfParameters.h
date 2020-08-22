@@ -1,7 +1,7 @@
 /*==============================================================================
 Project: LiFe
 Theme: Apex Method (Predictor + Corrector)
-Module: Problem-bsfParameters.h (BSF Skeleton Parameters)
+Module: Problem-bsfParameters.h (BSF-skeleton Parameters)
 Prefix: PP_BSF
 Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
 This source code has been produced with using BSF-skeleton
@@ -17,4 +17,4 @@ This source code has been produced with using BSF-skeleton
 									// Otherwise, the map-list is replicated on each worker-node. 
 //--------------------------- OpenMP Parameters ---------------------------
 //#define PP_BSF_OMP				// If PP_BSF_OMP is defined then OpenMP is turned on for Map Step
-#define PP_BSF_NUM_THREADS 12	// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used
+//#define PP_BSF_NUM_THREADS 12	// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used

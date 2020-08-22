@@ -9,26 +9,26 @@ This source code is a part of BSF Skeleton
 #pragma once
 #include "Problem-Types.h"		// Problem Types 
 //=========================== BSF Types =========================
-struct PT_bsf_parameter_T {				// Parameter for workers (current approximation)
+struct PT_bsf_parameter_T {		// Type of Parameter for workers (current approximation)
 	PT_vector_T x;		// Current approximation
 };
 
-struct PT_bsf_mapElem_T {	// Element of the map list
+struct PT_bsf_mapElem_T {		// Type of map-list elements
 	int inequalityNo;
 };
 
-struct PT_bsf_reduceElem_T {	// Element of reduce list	
+struct PT_bsf_reduceElem_T {	// Type of reduce-list elements for Job 0 (default)	
 	PT_vector_T projection;	// Point projection onto hyperplane
 };
 
-struct PT_bsf_reduceElem_T_1 {
+struct PT_bsf_reduceElem_T_1 {	// Type of reduce-list elements for Job 1
 	bool pointIn;
 };
 
-struct PT_bsf_reduceElem_T_2 {
+struct PT_bsf_reduceElem_T_2 {	// Type of reduce-list elements for Job 2
 	PT_vector_T projection;	// Point projection onto hyperplane
 };
 
-struct PT_bsf_reduceElem_T_3 {
+struct PT_bsf_reduceElem_T_3 {	// Type of reduce-list elements for Job 3
 // Not used
 };
