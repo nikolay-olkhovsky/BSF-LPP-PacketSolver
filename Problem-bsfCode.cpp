@@ -78,26 +78,15 @@ void PC_bsf_Init(bool* success) {
 			cout << "InequalityNo = " << i << "\tNorm Square = " << PD_normSquare_a[i] << endl;
 		//system("pause");
 	};/* end debug */
-};
+}
 
 void PC_bsf_SetListSize(int* listSize) {
 	*listSize = PP_M;
-};
+}
 
-void PC_bsf_SetMapSubList(PT_bsf_mapElem_T* sublist, int sublistLength, int offset) {
-	//*debug*/int rank; MPI_Comm_rank(MPI_COMM_WORLD, &rank); cout << rank << ":=========>PC_bsf_SetMapSubList: sublistLength = " << sublistLength << "\toffset = " << offset << endl; cout.flush();
-	for (int i = 0; i < sublistLength; i++) {
-		/* debug */// { if (i >= PP_M) exit(13); }
-		sublist[i].inequalityNo = offset + i;
-	};
-	/* debug *//* if (BSF_sv_mpiRank == 0) {
-		cout << BSF_sv_mpiRank << ":----------PC_bsf_SetMapSubList-------------" << endl;
-		for (int i = 0; i < sublistLength; i++) {
-			cout << "Inequality No = " << sublist[i].inequalityNo << "\tNot feasible = " << sublist[i].notFeasible << endl;
-		};
-		system("pause");
-	};/* end debug */
-};
+void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
+	elem->inequalityNo = i;
+}
 
 // 0. Apex Pseudo-pojection
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int* success // 1 - reduceElem was produced successfully; 0 - otherwise
