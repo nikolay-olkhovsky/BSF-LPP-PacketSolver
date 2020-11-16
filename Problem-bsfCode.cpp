@@ -41,43 +41,6 @@ void PC_bsf_Init(bool* success) {
 		*success = false;
 		return;
 	}
-
-	// Generating A & b
-	for (int i = 0; i < PP_N; i++) {
-		for (int j = 0; j < PP_N; j++) {
-			PD_A[i][j] = 0;
-			/* debug */// { if (i >= PP_M) exit(13); if (j >= PP_N) exit(14); }
-		}
-		PD_A[i][i] = 1;
-		PD_b[i] = PP_SF;
-	};
-	for (int j = 0; j < PP_N; j++)
-		PD_A[PP_N][j] = 1;
-	PD_b[PP_N] = (double)PP_SF * ((double)PP_N - 1) + (double)PP_SF / 2;
-	for (int j = 0; j < PP_N; j++)
-		PD_A[PP_N + 1][j] = -1;
-	PD_b[PP_N + 1] = -PP_SF / 2;
-	for (int i = PP_N + 2; i < PP_M; i++) {
-		for (int j = 0; j < PP_N; j++)
-			PD_A[i][j] = 0;
-		PD_A[i][i - PP_N - 2] = -1;
-		/* debug */// { if (i >= PP_M) exit(13); if (i - PP_N - 2 >= PP_N) exit(14); }
-		PD_b[i] = 0;
-	};
-
-	// Calculating a_i norm squares
-	for (int i = 0; i < PP_M; i++) {
-		PD_normSquare_a[i] = 0;
-		for (int j = 0; j < PP_N; j++)
-			PD_normSquare_a[i] += PD_A[i][j] * PD_A[i][j];
-	};
-	
-	/* debug *//* if (BSF_sv_mpiRank == 0) {
-		cout << "----------PC_bsf_Init-------------" << endl;
-		for (int i = 0; i < PP_M; i++)
-			cout << "InequalityNo = " << i << "\tNorm Square = " << PD_normSquare_a[i] << endl;
-		//system("pause");
-	};/* end debug */
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -85,7 +48,16 @@ void PC_bsf_SetListSize(int* listSize) {
 }
 
 void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
-	elem->inequalityNo = i;
+	for (int j = 0; j < PP_N; j++)
+		elem->a[j] = A(i, j);
+	elem->b = b(i);
+
+	// Calculating norm square
+	for (int i = 0; i < PP_M; i++) {
+		elem->normSquare = 0;
+		for (int j = 0; j < PP_N; j++)
+			elem->normSquare += elem->a[j] * elem->a[j];
+	}
 }
 
 // 0. Apex Pseudo-pojection
@@ -93,15 +65,13 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 ){
 	double factor;
 
-	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(BSF_sv_parameter.x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
+	factor = (mapElem->b - Vector_DotProductSquare(BSF_sv_parameter.x, mapElem->a)) / mapElem->normSquare;
 
 	if (factor > 0)
 		*success = false;
 	else
-		for (int j = 0; j < PP_N; j++) {
-			reduceElem->projection[j] = factor * PD_A[mapElem->inequalityNo][j];
-			/* debug */// { if (mapElem->inequalityNo >= PP_M || mapElem->inequalityNo < 0) exit(13); }
-		}
+		for (int j = 0; j < PP_N; j++) 
+			reduceElem->projection[j] = factor * mapElem->a[j];
 
 	/* debug *//* if (BSF_sv_mpiRank == 0) {
 		cout << "Hyperplane No = " << mapElem->inequalityNo << "\tProjection: ";
@@ -117,14 +87,10 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	};/* end debug */
 };
 
-void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem, int* success) {
-	// not used
-};
-
 // 1. Movement on Polytope
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem,int* success) {
-	if (PointIn(BSF_sv_parameter.x, mapElem->inequalityNo))
-		reduceElem->pointIn = true;
+	if (PointIn(BSF_sv_parameter.x, mapElem))
+			reduceElem->pointIn = true;
 	else
 		reduceElem->pointIn = false;
 }
@@ -141,13 +107,13 @@ void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem,
 		//system("pause");
 	} /* end debug */
 
-	factor = (PD_b[mapElem->inequalityNo] - Vector_DotProductSquare(BSF_sv_parameter.x, PD_A[mapElem->inequalityNo])) / PD_normSquare_a[mapElem->inequalityNo];
+	factor = (mapElem->b - Vector_DotProductSquare(BSF_sv_parameter.x, mapElem->a)) / mapElem->normSquare;
 
 	if (factor > 0)
 		*success = false;
 	else
 		for (int j = 0; j < PP_N; j++) {
-			reduceElem->projection[j] = factor * PD_A[mapElem->inequalityNo][j];
+			reduceElem->projection[j] = factor * mapElem->a[j];
 		}
 
 	/* debug *//* if (BSF_sv_mpiRank == 0) {
@@ -165,9 +131,23 @@ void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem,
 	};/* end debug */
 }
 
+void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem, int* success) {
+	// not used
+};
+
 // 0. Apex Pseudo-pojection
 void PC_bsf_ReduceF(PT_bsf_reduceElem_T* x, PT_bsf_reduceElem_T* y, PT_bsf_reduceElem_T* z) { // z = x + y
 	Vector_Addition(x->projection, y->projection, z->projection); 
+}
+
+// 1. Movement on Polytope
+void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
+	z->pointIn = x->pointIn && y->pointIn;
+}
+
+// 2. Point Pseudo-projection
+void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
+	Vector_Addition(x->projection, y->projection, z->projection);
 }
 
 void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf_reduceElem_T_3* z) {
@@ -263,26 +243,6 @@ void PC_bsf_ProcessResults(
 		//system("pause");
 #endif // PP_DEBUG
 	};
-}
-
-// 1. Movement on Polytope
-void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
-	z->pointIn = x->pointIn && y->pointIn;
-}
-
-// 2. Point Pseudo-projection
-void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
-	Vector_Addition(x->projection, y->projection, z->projection);
-}
-
-void PC_bsf_ProcessResults_3(
-	PT_bsf_reduceElem_T_3* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
-	PT_bsf_parameter_T* parameter, // Current Approximation
-	int* nextJob,
-	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
-) {
-	// not used
 }
 
 // 1. Movement on Polytope  ========================================================
@@ -444,6 +404,16 @@ void PC_bsf_ProcessResults_2(
 	*exit = true; return;
 }
 
+void PC_bsf_ProcessResults_3(
+	PT_bsf_reduceElem_T_3* reduceResult,
+	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	PT_bsf_parameter_T* parameter, // Current Approximation
+	int* nextJob,
+	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
+) {
+	// not used
+}
+
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== Quest & Target ====================================================" << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
@@ -470,13 +440,13 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Eps_Shift = " << PP_EPS_SHIFT << endl;
 	cout << "Length of Objective Vector: " << PP_OBJECTIVE_VECTOR_LENGTH << endl;
 	cout << "Start length of shift vector: " << PP_START_SHIFT_LENGTH << endl;
+
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix A & Column b -------" << endl;
 	for (int i = 0; i < PP_M; i++) {
-		cout << i << ")";
 		for (int j = 0; j < PP_N; j++)
-			cout << setw(5) << PD_A[i][j];
-		cout << "\t<=" << setw(5) << PD_b[i] << endl;
+			cout << setw(5) << A(i, j);
+		cout << "\t<=" << setw(5) << b(i) << endl;
 	};
 #endif // PP_MATRIX_OUTPUT
 	cout << "Objective Function:"; for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(6) << PD_c[j]; cout << (PP_OUTPUT_LIMIT < PP_N ? "	..." : "") << endl;
@@ -610,35 +580,12 @@ static double Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-static void Projection(PT_vector_T point, int hyperplaneNo, double normSquare, PT_vector_T projection) {
-	double factor;
-
-	factor = (PD_b[hyperplaneNo] - Vector_DotProductSquare(point, PD_A[hyperplaneNo])) / normSquare;
-	for (int j = 0; j < PP_N; j++)
-		projection[j] = point[j] + factor * PD_A[hyperplaneNo][j];
-
-	/* debug *//* if (BSF_sv_mpiRank == 0) {
-		cout << "---------- Projection -------------" << endl;
-		cout << "point: ";
-		for (int j = 0; j < PP_N; j++)
-			cout << setw(20) << point[j];
-		cout << "\thyperplaneNo: " << hyperplaneNo << "\tPD_A[hyperplaneNo]: ";
-		for (int j = 0; j < PP_N; j++)
-			cout << setw(2) << PD_A[hyperplaneNo][j];
-		cout << " <= " << PD_b[hyperplaneNo] << endl;
-		cout << "Vector_DotProductSquare(point, PD_A[hyperplaneNo]) = " << Vector_DotProductSquare(point, PD_A[hyperplaneNo]) << endl;
-		cout << "normSquare = " << normSquare << endl;
-		cout << "factor = " << factor << endl;
-	}/* end debug */
-}
-
-static bool PointIn(PT_vector_T point, int halfSpaceNo) { // If the point belonges to the Halfspace 
-	double sum = 0;
+static bool PointIn(PT_vector_T point, PT_bsf_mapElem_T* mapElem) { // If the point belonges to the Halfspace 
+		double sum = 0;
 
 	for (int j = 0; j < PP_N; j++)
-		sum += PD_A[halfSpaceNo][j] * point[j];
-	//if (sum > PD_b[halfSpaceNo] + PP_EPS_IN)
-	if (sum > PD_b[halfSpaceNo])
+		sum += mapElem->a[j] * point[j];
+	if (sum > mapElem->b)
 			return false;
 	else
 		return true;
@@ -745,4 +692,28 @@ static double ObjectiveF(PT_vector_T x) {
 	for (int j = 0; j < PP_N; j++)
 		s += PD_c[j] * x[j];
 	return s;
+}
+
+inline PT_float_T A(int i, int j) {
+	if (i < PP_N) {
+		if (j != i) return 0;
+		return 1;
+	}
+
+	if (i == PP_N) return 1;
+
+	if (i == PP_N + 1) return -1;
+
+	if (j + PP_N + 2 != i) return 0;
+	return -1;
+}
+
+inline PT_float_T b(int i) {
+	if (i < PP_N) return PP_SF;
+
+	if (i == PP_N) return PP_SF * (PP_N - 1) + PP_SF / 2;
+
+	if (i == PP_N + 1) return -PP_SF / 2;
+
+	return 0;
 }

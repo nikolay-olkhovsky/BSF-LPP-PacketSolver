@@ -14,7 +14,9 @@ struct PT_bsf_parameter_T {		// Type of Parameter for workers (current approxima
 };
 
 struct PT_bsf_mapElem_T {		// Type of map-list elements
-	int inequalityNo;
+	PT_vector_T a;		// Inequality: a[0]*x_1+...+a[n-1]*x_n <= b
+	PT_float_T b;
+	PT_float_T normSquare; // a[0]*a[0]+...+a[n-1]*a[n-1]
 };
 
 struct PT_bsf_reduceElem_T {	// Type of reduce-list elements for Job 0 (default)	

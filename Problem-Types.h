@@ -10,6 +10,5 @@ This source code has been produced with using BSF-skeleton
 #include "Problem-Include.h"		// Problem "Include" Files
 #include "Problem-Parameters.h"		// Problem Parameters 
 //=========================== Problem Types =========================
-typedef double PT_vector_T[PP_N];			// Vector of dimensional n
-typedef double PT_matrix_T[PP_M][PP_N];		// Matrix m x n
-typedef double PT_column_T[PP_M];			// Column of m elements
+typedef double PT_float_T;
+typedef PT_float_T PT_vector_T[PP_N];			// Vector of dimensional n
