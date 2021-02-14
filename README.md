@@ -5,4 +5,4 @@ This repository contains source codes of a parallel implementation of the novel 
 
 A description of the apex-method is available in the paper:
 
-1. Sokolinsky L.B., Sokolinskaya I.M. Scalable Method for Linear Optimization of Industrial Processes // Proceedings - 2020 Global Smart Industry Conference, GloSIC 2020. IEEE, 2020. P. 20–26. Article number 9267854. DOI:10.1109/GloSIC50886.2020.9267854. [Full Text in PDF]
+1. Sokolinsky L.B., Sokolinskaya I.M. Scalable Method for Linear Optimization of Industrial Processes // Proceedings - 2020 Global Smart Industry Conference, GloSIC 2020. IEEE, 2020. P. 20–26. Article number 9267854. DOI:10.1109/GloSIC50886.2020.9267854. https://sok.susu.ru/papers/fulltext/GloSIC-2020-Apex.pdf
