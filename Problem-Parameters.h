@@ -14,7 +14,7 @@ This source code has been produced with using BSF-skeleton
 #ifdef	RANDOM_LPP //-------------------------------------------------------------------------------------------+
 #define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities for random LPP	|
 #else //--------------------------------------------------------------------------------------------------------+
-#define PP_NUM_OF_NATURAL_INEQUALITIES 1					// Number of natural inequalities for model LPP		|
+#define PP_NUM_OF_NATURAL_INEQUALITIES 0					// Number of natural inequalities for model LPP		|
 #endif//--------------------------------------------------------------------------------------------------------+ 
 #define PP_M (2*PP_N + PP_NUM_OF_NATURAL_INEQUALITIES + 1)	// Total number of inequalities of given system
 #define PP_MM (PP_M + 2 * (PP_N - 2))	// Maximal number of inequalities including additional
@@ -54,7 +54,7 @@ This source code has been produced with using BSF-skeleton
 #ifdef	RANDOM_LPP //-----------------------------------------------+
 #define PP_LPP_FILE "D:/OneDrive/Data/rnd006-0.txt"// Random LPP	|
 #else //------------------------------------------------------------+
-#define PP_LPP_FILE "D:/OneDrive/Data/mdlLpp.txt" // Model LPP		|
+#define PP_LPP_FILE "D:/OneDrive/Data/mdlLpp006.txt" // Model LPP		|
 #endif//------------------------------------------------------------+ 
 // Input data file in the following format:
 /*
