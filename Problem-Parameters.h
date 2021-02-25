@@ -7,15 +7,10 @@ Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
-//#define PP_DEBUG
+#define PP_DEBUG
 //=========================== Problem Parameters =========================
-#define RANDOM_LPP			// Use random LPP
-#define PP_N 6				// n - Dimension of Space
-#ifdef	RANDOM_LPP //-------------------------------------------------------------------------------------------+
-#define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities for random LPP	|
-#else //--------------------------------------------------------------------------------------------------------+
-#define PP_NUM_OF_NATURAL_INEQUALITIES 0					// Number of natural inequalities for model LPP		|
-#endif//--------------------------------------------------------------------------------------------------------+ 
+#define PP_N 4				// n - Dimension of Space
+#define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities
 #define PP_M (2*PP_N + PP_NUM_OF_NATURAL_INEQUALITIES + 1)	// Total number of inequalities of given system
 #define PP_MM (PP_M + 2 * (PP_N - 2))	// Maximal number of inequalities including additional
 #define PP_SF 200			// Scale factor
@@ -51,11 +46,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_STATE_			4
 
 //-------------------------- Input ----------------------
-#ifdef	RANDOM_LPP //-----------------------------------------------+
-#define PP_LPP_FILE "D:/OneDrive/Data/rnd006-0.txt"// Random LPP	|
-#else //------------------------------------------------------------+
-#define PP_LPP_FILE "D:/OneDrive/Data/mdlLpp006.txt" // Model LPP		|
-#endif//------------------------------------------------------------+ 
+#define PP_LPP_FILE "C:/TEMP/lpp-1.txt"
 // Input data file in the following format:
 /*
 ------------ begin of file -------------
@@ -69,11 +60,7 @@ c_1 c_2 ... c_n
 */
 
 //-------------------------- Output ---------------------------------------------
-#ifdef	RANDOM_LPP //-----------------------------------------------------------+
-#define PP_SOLUTION_FILE "D:/OneDrive/Data/rndSolution006-0.txt" // Solution of random LPP	|
-#else //------------------------------------------------------------------------+
-#define PP_SOLUTION_FILE "D:/OneDrive/Data/mdlSolution.txt" // Solution of model LPP		|
-#endif//------------------------------------------------------------------------+ 
+#define PP_SOLUTION_FILE "C:/TEMP/Solution-1.txt" // Solution of LPP	|
 // Output data file in the following format:
 /*
 ------------ begin of file -------------
