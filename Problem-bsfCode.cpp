@@ -420,9 +420,6 @@ void PC_bsf_JobDispatcher(
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
 		break;
-	case PP_STATE_://------------------ ... ----------------------
-
-		break;
 	default://------------------------------------- default -----------------------------------
 		cout << "PC_bsf_JobDispatcher: Undefined state!" << endl;
 		break;
@@ -600,13 +597,6 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 
 inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point exactly belongs to the Half-space 
 	return Vector_DotProductSquare(a, point) <= b;
-}
-
-inline bool PointInPolytope(PT_vector_T point) {
-	for (int i = 0; i < PP_MM; i++)
-			if (Vector_DotProductSquare(point, PD_A[i]) > PD_b[i] + PP_EPS_ZERO)
-			return false;
-	return true;
 }
 
 inline void Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint) {

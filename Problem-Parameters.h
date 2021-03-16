@@ -43,10 +43,8 @@ This source code has been produced with using BSF-skeleton
 #define PP_STATE_FIND_BEGINNING_OF_PATH		1
 #define PP_STATE_DETERMINE_DIRECTION		2
 #define PP_STATE_MOVE_AND_CHECK				3
-#define PP_STATE_			4
-
 //-------------------------- Input ----------------------
-#define PP_LPP_FILE "C:/TEMP/lpp-1.txt"
+#define PP_LPP_FILE "lpp.txt"
 // Input data file in the following format:
 /*
 ------------ begin of file -------------
@@ -60,7 +58,7 @@ c_1 c_2 ... c_n
 */
 
 //-------------------------- Output ---------------------------------------------
-#define PP_SOLUTION_FILE "C:/TEMP/Solution-1.txt" // Solution of LPP	|
+#define PP_SOLUTION_FILE "solution.txt" // Solution of LPP	|
 // Output data file in the following format:
 /*
 ------------ begin of file -------------
