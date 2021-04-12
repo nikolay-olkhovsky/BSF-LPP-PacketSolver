@@ -9,9 +9,9 @@ This source code has been produced with using BSF-skeleton
 //-------------------------- Compilation Modes -----------------------
 #define PP_DEBUG
 //=========================== Problem Parameters =========================
-#define PP_N 4				// n - Dimension of Space
-#define PP_NUM_OF_NATURAL_INEQUALITIES (PP_N)				// Number of natural inequalities
-#define PP_M (2*PP_N + PP_NUM_OF_NATURAL_INEQUALITIES + 1)	// Total number of inequalities of given system
+#define PP_N 5				// n - Dimension of Space
+#define PP_NUM_OF_RND_INEQUALITIES (PP_N)				// Number of random inequalities
+#define PP_M (2*PP_N + PP_NUM_OF_RND_INEQUALITIES + 1)	// Total number of inequalities of given system
 #define PP_MM (PP_M + 2 * (PP_N - 2))	// Maximal number of inequalities including additional
 #define PP_SF 200			// Scale factor
 #define PP_DIST_TO_APEX (PP_N*PP_SF*100000)// Distance to Apex Point 

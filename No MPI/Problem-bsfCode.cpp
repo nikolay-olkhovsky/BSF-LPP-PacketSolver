@@ -106,10 +106,10 @@ void PC_bsf_Init(bool* success) {
 
 	// Generating Coordinates of Apex Point
 	ObjectiveUnitVector(PD_objectiveUnitVector);
-	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_DIST_TO_APEX, PD_apex);
+	Vector_MultiplyByNumber(PD_objectiveUnitVector, (PT_float_T)PP_DIST_TO_APEX, PD_apex);
 	Vector_PlusEquals(PD_apex, PD_basePoint);
 
-	if (PD_apex[PD_n - 1] < PP_SF * 1.1) {
+	if (PD_apex[PD_n - 1] < (PT_float_T)PP_SF * 1.1) {
 		if (BSF_sv_mpiRank == 0)
 			cout << "PC_bsf_Init.Error: PD_apex[PD_n - 1] = " << PD_apex[PD_n - 1] << " < PP_SF * 1.1 = " << PP_SF * 1.1 << endl;
 		*success = false;
