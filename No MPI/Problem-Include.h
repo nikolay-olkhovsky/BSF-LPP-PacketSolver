@@ -2,7 +2,7 @@
 Project: LiFe
 Theme: Apex Method (Predictor + Corrector)
 Module: Problem-Include.h ("Includ" Files of the Problem)
-Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
+Author: Leonid B. Sokolinsky
 ==============================================================================*/
 #pragma once
 #include <iomanip>

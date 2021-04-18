@@ -1,9 +1,9 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method
 Module: Problem-bsfParameters.h (BSF-skeleton Parameters)
 Prefix: PP_BSF
-Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
+Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 

@@ -1,8 +1,9 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method
 Module: Problem-Data.h (Problem Data)
-Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
+Prefix: PD
+Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 #include "Problem-Types.h"		// Problem Parameters 

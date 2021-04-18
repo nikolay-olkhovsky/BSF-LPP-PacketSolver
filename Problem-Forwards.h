@@ -1,8 +1,8 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method
 Module: Problem-Forwards.h (Problem Function Forwards)
-Author(s): Leonid B. Sokolinsky, Irina M. Sokolinskaya
+Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 #include "Problem-bsfTypes.h"
