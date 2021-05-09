@@ -24,17 +24,18 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	
-	if (PP_EPS_IN < 0.1) {
-		cout << "PP_EPS_IN must be equal or greater than 0.1!\n";
+	/*if (PP_EPS_IN < 0.01) {
+		cout << "PP_EPS_IN must be equal or greater than 0.01!\n";
 		*success = false;
 		system("pause");
 		return;
-	}
+	}/**/
 
 	// ------------- Load LPP data -------------------
 	/*cout << "Enter LPP file name: ";
 	cin >> PD_lppFile;/**/
-	PD_lppFile = "lpp.txt";
+	PD_lppFile = PP_PATH;
+	PD_lppFile += "lpp.txt";
 	const char* lppFile = PD_lppFile.c_str();
 
 	FILE* stream;
@@ -47,7 +48,7 @@ void PC_bsf_Init(bool* success) {
 		return;
 	}
 
-	fscanf(stream, "%d%d", &PD_m, &PD_n);
+	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) cout << "Unexpected end of file" << endl;
 	
 	if (PD_n > PP_MAX_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
@@ -56,29 +57,29 @@ void PC_bsf_Init(bool* success) {
 		return;
 	}
 
-	if (PD_n >= PD_m) {
+	if (PD_n >= PD_m_init) {
 		cout << "Invalid input data: Space dimension n = " << PD_n 
-			<< " must be less then number of inequalities m = " << PD_m << "\n";
+			<< " must be less then number of inequalities m = " << PD_m_init << "\n";
 		*success = false;
 		system("pause");
 		return;
 	}
 
-	for (int i = 0; i < PD_m; i++) {
+	for (int i = 0; i < PD_m_init; i++) {
 		for (int j = 0; j < PD_n; j++) {
-			fscanf(stream, "%f", &buf);
+			if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 			PD_A[i][j] = buf;
 		}
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
 		PD_c[j] = buf;
 	}
 
-	if (PD_c[0] != PD_n * PP_RHO) {
+	if (PD_c[0] != (PT_float_T)PD_n * PP_RHO) {
 		cout << "Invalid input data!\n";
 		*success = false;
 		system("pause");
@@ -87,10 +88,12 @@ void PC_bsf_Init(bool* success) {
 
 	fclose(stream);
 
-	PD_solutionFile = "solution.txt";
+	PD_solutionFile = PP_PATH;
+	PD_solutionFile += "solution.txt";
 
 	// Open trace file
-	PD_traceFile = "trace.txt";
+	PD_traceFile = PP_PATH;
+	PD_traceFile += "trace.txt";
 	const char* traceFile = PD_traceFile.c_str();
 	PD_traceStream = fopen(traceFile, "w");
 	if (stream == NULL) {
@@ -109,12 +112,13 @@ void PC_bsf_Init(bool* success) {
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, (PT_float_T)PP_DIST_TO_APEX, PD_apex);
 	Vector_PlusEquals(PD_apex, PD_basePoint);
 
-	if (PD_apex[PD_n - 1] < (PT_float_T)PP_SF * 1.1) {
+	/*if (PD_apex[PD_n - 1] < (PT_float_T)PP_SF * 1.1) {
 		if (BSF_sv_mpiRank == 0)
 			cout << "PC_bsf_Init.Error: PD_apex[PD_n - 1] = " << PD_apex[PD_n - 1] << " < PP_SF * 1.1 = " << PP_SF * 1.1 << endl;
 		*success = false;
 		return;
-	}
+	}/**/
+	PD_m = PP_MAX_M;
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -340,21 +344,20 @@ void PC_bsf_JobDispatcher(
 		for (int j = 0; j < PD_n; j++)					//
 			cout << setw(PP_SETW) << PD_direction[j];	//
 		cout << endl;									//
-		system("pause");								//
+		//system("pause");								//
 		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
 		PD_newInequations = false;
-		for (int j = 0; j < PD_n - 2; j++) {
+		for (int j = 0; j < PD_n - 1; j++) {
 			if (PD_direction[j] > 0)
 				break;
 			if (PD_direction[j] == 0) 
 				continue;
-			PD_direction[j] = 0;
-			parameter->i = PD_m;
-			Vector_Copy(PD_A[PD_m], parameter->a);
-			parameter->a[j] = 1;
-			parameter->b = PD_basePoint[j];
+			PD_A[PD_m][j] = 1;
+			PD_b[PD_m] = PD_basePoint[j];
+			PD_A[PD_m + 1][j] = -1;
+			PD_b[PD_m + 1] = -PD_basePoint[j];
 			PD_m += 2;
 			PD_newInequations = true;
 			break;
@@ -362,23 +365,12 @@ void PC_bsf_JobDispatcher(
 		if (PD_newInequations) {
 			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
 			*job = PP_JOB_PSEUDOPOJECTION;
-#ifdef PP_DEBUG //------------------------------------------//
-			cout << "\t\t\tD = ";							//
-			for (int j = 0; j < PD_n; j++)					//
-				cout << setw(PP_SETW) << PD_direction[j];	//
-			cout << endl;									//
-			system("pause");								//
-			cout << "-----------------------------------\n";//
-#endif // PP_DEBUG -----------------------------------------//
 			return;
 		}
 
 		WriteTrace(PD_tracePoint); // Trace!!! --------->>>
-		for (int j = 0; j < PD_n; j++)
-			cout << setw(PP_SETW) << PD_tracePoint[j];
-		cout << endl;
 
-		PD_numSeqShifts = 0;
+		//PD_numSeqShifts = 0;
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
@@ -386,7 +378,7 @@ void PC_bsf_JobDispatcher(
 		return;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-		PD_numSeqShifts++;
+		//PD_numSeqShifts++;
 
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
@@ -398,8 +390,8 @@ void PC_bsf_JobDispatcher(
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PD_n; j++)
-				cout << setw(PP_SETW) << parameter->x[j];
-			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+				cout << setw(PP_SETW) << parameter->x[j] << ",";
+			// cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG /**/
 			Vector_Copy(parameter->x, PD_basePoint);
@@ -407,7 +399,8 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (PD_shiftLength >= PP_EPS_SHIFT && PD_numSeqShifts < PP_MAX_NUM_SEQ_SHIFTS) {
+		//if (PD_shiftLength >= PP_EPS_SHIFT && PD_numSeqShifts < PP_MAX_NUM_SEQ_SHIFTS) {
+		if (PD_shiftLength >= PP_EPS_SHIFT) {
 			PD_shiftLength /= 2;
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
@@ -447,6 +440,7 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
+	PD_m = PD_m_init;
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix PD_A & Column PD_b -------" << endl;
 	for (int i = 0; i < PD_m; i++) {

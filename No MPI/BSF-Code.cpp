@@ -38,10 +38,10 @@ int main(int argc, char* argv[]) {
 static void BC_Master() {// The head function of the master process.
 	PC_bsf_ParametersOutput(BD_order.parameter);
 	BD_iterCounter = 0;
-
 	BD_t = -(double)time(NULL);
 	do {
 		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit);
+		PC_bsf_SetListSize(&BD_listSize);
 		if (BD_exit) break;
 		BD_jobCase = BD_newJobCase;
 		if (BD_jobCase > PP_BSF_MAX_JOB_CASE) {

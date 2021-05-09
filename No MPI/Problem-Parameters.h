@@ -18,12 +18,12 @@ This source code has been produced with using BSF-skeleton
 
 #define PP_EPS_RELAX		1E-11			// Precision for relaxation
 #define PP_EPS_SHIFT		1E-10
-#define PP_EPS_IN			1E-1
-#define PP_EPS_ZERO			1E-5
-#define PP_EPS_DIR			1E-3
+#define PP_EPS_IN			1E-2
+#define PP_EPS_ZERO			1E-9
+#define PP_EPS_DIR			1E-6
 #define PP_EPS_OBJECTIVE	1E-1
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH 5	// Maximal number of shifts with the same length
-#define PP_MAX_NUM_SEQ_SHIFTS 500		// Maximal number of sequential shifts
+//#define PP_MAX_NUM_SEQ_SHIFTS 500		// Maximal number of sequential shifts
 
 #define PP_MAX_ITER_COUNT	10000000					// Maximal count of iterations
 #define PP_OBJECTIVE_VECTOR_LENGTH ((double)PP_SF/200)	// Length of Objective Vector
@@ -34,6 +34,7 @@ This source code has been produced with using BSF-skeleton
 //#define PP_MATRIX_OUTPUT	// To output Matrix
 //#define PP_SETW 14
 #define PP_SETW 12
+#define PP_PATH "C:/TEMP/"
 //-------------------------- Jobs  -----------------------
 #define PP_JOB_PSEUDOPOJECTION	0 
 #define PP_JOB_CHECK			1		
