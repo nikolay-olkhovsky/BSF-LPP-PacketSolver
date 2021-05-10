@@ -48,7 +48,7 @@ void PC_bsf_Init(bool* success) {
 		return;
 	}
 
-	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) cout << "Unexpected end of file" << endl;
+	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
 	
 	if (PD_n > PP_MAX_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
@@ -67,15 +67,15 @@ void PC_bsf_Init(bool* success) {
 
 	for (int i = 0; i < PD_m_init; i++) {
 		for (int j = 0; j < PD_n; j++) {
-			if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
+			if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
 			PD_A[i][j] = buf;
 		}
-		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl;
+		if (fscanf(stream, "%f", &buf) == 0) cout << "Unexpected end of file" << endl; *success = false; return;
 		PD_c[j] = buf;
 	}
 

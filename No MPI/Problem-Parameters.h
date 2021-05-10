@@ -29,7 +29,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_OBJECTIVE_VECTOR_LENGTH ((double)PP_SF/200)	// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH (PP_SF/20)				// Start length of shift vector
 
-//-------------------------- Outpoot Parameters ---------------------------
+//-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 //#define PP_MATRIX_OUTPUT	// To output Matrix
 //#define PP_SETW 14

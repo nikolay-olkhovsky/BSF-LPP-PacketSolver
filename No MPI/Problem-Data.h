@@ -30,6 +30,7 @@ static PT_vector_T PD_objectiveUnitVector;	// c/=||c||
 static PT_vector_T PD_relaxationVector;
 static PT_vector_T PD_tracePoint;
 
+//========================== INput/Output ====================================
 static string PD_lppFile; /* LPP file in the following format:
 ------------ begin of file -------------
 m n
