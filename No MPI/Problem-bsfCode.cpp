@@ -24,13 +24,6 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	
-	/*if (PP_EPS_IN < 0.01) {
-		cout << "PP_EPS_IN must be equal or greater than 0.01!\n";
-		*success = false;
-		system("pause");
-		return;
-	}/**/
-
 	// ------------- Load LPP data -------------------
 	/*cout << "Enter LPP file name: ";
 	cin >> PD_lppFile;/**/
@@ -348,24 +341,26 @@ void PC_bsf_JobDispatcher(
 		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
-		PD_newInequations = false;
-		for (int j = 0; j < PD_n - 1; j++) {
-			if (PD_direction[j] > 0)
+		if (PP_MAJOR_COORDINATES_DECREASE) {
+			PD_newInequations = false;
+			for (int j = 0; j < PD_n - 1; j++) {
+				if (PD_direction[j] > 0)
+					break;
+				if (PD_direction[j] == 0)
+					continue;
+				PD_A[PD_m][j] = 1;
+				PD_b[PD_m] = PD_basePoint[j];
+				PD_A[PD_m + 1][j] = -1;
+				PD_b[PD_m + 1] = -PD_basePoint[j];
+				PD_m += 2;
+				PD_newInequations = true;
 				break;
-			if (PD_direction[j] == 0) 
-				continue;
-			PD_A[PD_m][j] = 1;
-			PD_b[PD_m] = PD_basePoint[j];
-			PD_A[PD_m + 1][j] = -1;
-			PD_b[PD_m + 1] = -PD_basePoint[j];
-			PD_m += 2;
-			PD_newInequations = true;
-			break;
-		}
-		if (PD_newInequations) {
-			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-			*job = PP_JOB_PSEUDOPOJECTION;
-			return;
+			}
+			if (PD_newInequations) {
+				PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
+				*job = PP_JOB_PSEUDOPOJECTION;
+				return;
+			}
 		}
 
 		WriteTrace(PD_tracePoint); // Trace!!! --------->>>
@@ -390,7 +385,7 @@ void PC_bsf_JobDispatcher(
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PD_n; j++)
-				cout << setw(PP_SETW) << parameter->x[j] << ",";
+				cout << setw(PP_SETW) << parameter->x[j];
 			// cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG /**/

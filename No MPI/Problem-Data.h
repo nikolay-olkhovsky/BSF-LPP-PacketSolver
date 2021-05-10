@@ -13,7 +13,6 @@ static int		PD_n;						// Space dimension
 static int		PD_m;						// Current number of inequalities
 static int		PD_m_init;					// Initial number of inequalities
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
-//static int		PD_numSeqShifts;			// Number of sequential shifts
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequations;
 static bool		PD_pointIn;
