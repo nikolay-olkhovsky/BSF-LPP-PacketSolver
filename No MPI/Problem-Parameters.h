@@ -7,7 +7,7 @@ Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
-#define PP_DEBUG
+//#define PP_DEBUG
 //=========================== Problem Parameters =========================
 #define PP_MAJOR_COORDINATES_DECREASE true							// "true" straightens the trace, but can lead to a incorrect solution
 #define PP_MAX_N 50													// Maximal Space Dimension
