@@ -25,45 +25,59 @@ void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_m = PP_M;
 	
-	if (PP_EPS_IN < 0.1) {
+	/*if (PP_EPS_IN < 0.1) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "PP_EPS_IN must be equal or greater than 0.1!\n";
 		*success = false; return;
-	}
+	}/**/
 
 	// ------------- Load LPP data -------------------
+	PD_lppFile = PP_PATH;
+	PD_lppFile += PP_LPP_FILE;
+	const char* lppFile = PD_lppFile.c_str();
+
 	FILE* stream;
 	float buf;
 	int m, n;
-	stream = fopen(PP_LPP_FILE, "r");
+	stream = fopen(lppFile, "r");
+	
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << PP_LPP_FILE << "'.\n";
+			cout << "Failure of opening file '" << lppFile << "'.\n";
 		*success = false; return;
 	}
 
-	fscanf(stream, "%d%d", &m, &n);
+	if (fscanf(stream, "%d%d", &m, &n) == 0) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
+			cout << "Unexpected end of file" << endl; 
+		*success = false; 
+		return; 
+	}
+
 	if (n != PP_N || m != PP_M) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Error in input data '" << PP_LPP_FILE << "': PP_N != n and/or PP_M != m (PP_N = "
+			cout << "Error in input data '" << lppFile << "': PP_N != n and/or PP_M != m (PP_N = "
 			<< PP_N << ", n = " << n << "; PP_M = " << PP_M << ", m = " << m << ").\n";
 		*success = false; return;
 	}
 
 	for (int i = 0; i < PP_M; i++) {
 		for (int j = 0; j < PP_N; j++) {
-			fscanf(stream, "%f", &buf);
+			if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
 			PD_A[i][j] = buf;
 		}
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
 		PD_b[i] = buf;
 	}
 
 	for (int j = 0; j < PP_N; j++) {
-		fscanf(stream, "%f", &buf);
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
 		PD_c[j] = buf;
 	}
 	fclose(stream);
+
+	PD_solutionFile = PP_PATH;
+	PD_solutionFile += PP_SOLUTION_FILE;
 
 	// Generating a point inside the polytope
 	for (int j = 0; j < PP_N; j++)
@@ -71,7 +85,7 @@ void PC_bsf_Init(bool* success) {
 
 	// Generating Coordinates of Apex Point
 	ObjectiveUnitVector(PD_objectiveUnitVector);
-	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_DIST_TO_APEX, PD_apex);
+	Vector_MultiplyByNumber(PD_objectiveUnitVector, (double)PP_DIST_TO_APEX, PD_apex);
 	Vector_PlusEquals(PD_apex, PD_basePoint);
 
 	if (PD_apex[PP_N - 1] < PP_SF * 1.1) {
@@ -321,33 +335,35 @@ void PC_bsf_JobDispatcher(
 		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
-		PD_newInequations = false;
-		for (int j = 0; j < PP_N - 2; j++) {
-			if (PD_direction[j] > 0)
+		if (PP_MAJOR_COORDINATES_DECREASE) {
+			PD_newInequations = false;
+			for (int j = 0; j < PP_N - 2; j++) {
+				if (PD_direction[j] > 0)
+					break;
+				if (PD_direction[j] == 0)
+					continue;
+				PD_direction[j] = 0;
+				parameter->i = PD_m;
+				Vector_Copy(PD_A[PD_m], parameter->a);
+				parameter->a[j] = 1;
+				parameter->b = PD_basePoint[j];
+				PD_m += 2;
+				PD_newInequations = true;
 				break;
-			if (PD_direction[j] == 0) 
-				continue;
-			PD_direction[j] = 0;
-			parameter->i = PD_m;
-			Vector_Copy(PD_A[PD_m], parameter->a);
-			parameter->a[j] = 1;
-			parameter->b = PD_basePoint[j];
-			PD_m += 2;
-			PD_newInequations = true;
-			break;
-		}
-		if (PD_newInequations) {
-			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-			*job = PP_JOB_PSEUDOPOJECTION;
+			}
+			if (PD_newInequations) {
+				PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
+				*job = PP_JOB_PSEUDOPOJECTION;
 #ifdef PP_DEBUG //------------------------------------------//
-			cout << "\t\t\tD = ";							//
-			for (int j = 0; j < PP_N; j++)					//
-				cout << setw(PP_SETW) << PD_direction[j];	//
-			cout << endl;									//
-			//system("pause");								//
-			cout << "-----------------------------------\n";//
+				cout << "\t\t\tD = ";							//
+				for (int j = 0; j < PP_N; j++)					//
+					cout << setw(PP_SETW) << PD_direction[j];	//
+				cout << endl;									//
+				//system("pause");								//
+				cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -----------------------------------------//
-			return;
+				return;
+			}
 		}
 
 		PD_numSeqShifts = 0;
@@ -392,8 +408,8 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << PD_basePoint[j];
 		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
 		cout << endl;
-		if (SaveSolution(PD_basePoint, PP_SOLUTION_FILE))
-			cout << "Point u is saved into the file '" << PP_SOLUTION_FILE << "'." << endl;/**/
+		/*if (SaveSolution(PD_basePoint, PD_solutionFile))
+			cout << "Point u is saved into the file '" << PD_solutionFile << "'." << endl;/**/
 		//system("pause");
 
 		/*PointTouch(PD_basePoint);
@@ -711,13 +727,14 @@ inline double ObjectiveF(PT_vector_T x) {
 	return s;
 }
 
-static bool SaveSolution(PT_vector_T x, const char* filename) {
+static bool SaveSolution(PT_vector_T x, string solutionFile) {
 	FILE* stream;
 
-	stream = fopen(filename, "w");
+	const char* file = solutionFile.c_str();
+	stream = fopen(file, "w");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << filename << "'.\n";
+			cout << "Failure of opening file '" << solutionFile << "'.\n";
 		return false;
 	}
 
@@ -755,8 +772,8 @@ inline void ProblemOutput(double elapsedTime) {
 	cout << "=============================================" << endl;
 	cout << "Elapsed time: " << elapsedTime << endl;
 	cout << "Iterations: " << BSF_sv_iterCounter << endl;
-	if (SaveSolution(PD_basePoint, PP_SOLUTION_FILE))
-		cout << "Solution is saved into the file '" << PP_SOLUTION_FILE << "'." << endl;
+	if (SaveSolution(PD_basePoint, PD_solutionFile))
+		cout << "Solution is saved into the file '" << PD_solutionFile << "'." << endl;
 	cout << "Solution: ";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
 	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];

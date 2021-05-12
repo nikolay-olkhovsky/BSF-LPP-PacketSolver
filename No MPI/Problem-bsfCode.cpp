@@ -28,7 +28,7 @@ void PC_bsf_Init(bool* success) {
 	/*cout << "Enter LPP file name: ";
 	cin >> PD_lppFile;/**/
 	PD_lppFile = PP_PATH;
-	PD_lppFile += "lpp.txt";
+	PD_lppFile += PP_LPP_FILE;
 	const char* lppFile = PD_lppFile.c_str();
 
 	FILE* stream;
@@ -82,11 +82,11 @@ void PC_bsf_Init(bool* success) {
 	fclose(stream);
 
 	PD_solutionFile = PP_PATH;
-	PD_solutionFile += "solution.txt";
+	PD_solutionFile += PP_SOLUTION_FILE;
 
 	// Open trace file
 	PD_traceFile = PP_PATH;
-	PD_traceFile += "trace.txt";
+	PD_traceFile += PP_TRACE_FILE;
 	const char* traceFile = PD_traceFile.c_str();
 	PD_traceStream = fopen(traceFile, "w");
 	if (stream == NULL) {

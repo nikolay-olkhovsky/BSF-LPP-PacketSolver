@@ -8,8 +8,8 @@ This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
 //#define PP_DEBUG
-//=========================== Problem Parameters =========================
 #define PP_MAJOR_COORDINATES_DECREASE true							// "true" straightens the trace, but can lead to a incorrect solution
+//=========================== Problem Parameters =========================
 #define PP_MAX_N 50													// Maximal Space Dimension
 #define PP_MAX_NUM_OF_RND_INEQUALITIES (PP_MAX_N)					// Maximal Number of random inequalities		|
 #define PP_MAX_M (2*PP_MAX_N + PP_MAX_NUM_OF_RND_INEQUALITIES + 1)	// Maximal Total number of inequalities
@@ -35,6 +35,9 @@ This source code has been produced with using BSF-skeleton
 //#define PP_MATRIX_OUTPUT	// To output Matrix
 #define PP_SETW 12
 #define PP_PATH "C:/TEMP/"
+#define PP_LPP_FILE "lpp.txt"
+#define PP_SOLUTION_FILE "solution.txt"
+#define PP_TRACE_FILE "trace.txt"
 //-------------------------- Jobs  -----------------------
 #define PP_JOB_PSEUDOPOJECTION	0 
 #define PP_JOB_CHECK			1		

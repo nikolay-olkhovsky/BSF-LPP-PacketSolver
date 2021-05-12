@@ -15,7 +15,7 @@ void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
 void		ProblemOutput(double elapsedTime);
-bool		SaveSolution(PT_vector_T x, const char* filename);
+bool		SaveSolution(PT_vector_T x, string solutionFile);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint);
