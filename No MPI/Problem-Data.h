@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method (No MPI)
 Module: Problem-Data.h (Problem Data)
 Prefix: PP
 Author: Leonid B. Sokolinsky

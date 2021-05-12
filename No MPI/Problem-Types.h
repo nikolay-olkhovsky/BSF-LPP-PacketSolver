@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method (No MPI)
 Module: Problem-Types.h (BSF Types)
 Prefix: PT
 Author: Leonid B. Sokolinsky

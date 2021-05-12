@@ -1,6 +1,6 @@
 /*==============================================================================
 Project: LiFe
-Theme: Apex Method (Predictor + Corrector)
+Theme: Apex Method (No MPI)
 Module: Problem-bsfCode.cpp (Implementation of the Problem)
 Prefix: PI
 Author: Leonid B. Sokolinsky
