@@ -335,37 +335,36 @@ void PC_bsf_JobDispatcher(
 		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
-		if (PP_MAJOR_COORDINATES_DECREASE) {
-			PD_newInequations = false;
-			for (int j = 0; j < PP_N - 2; j++) {
-				if (PD_direction[j] > 0)
-					break;
-				if (PD_direction[j] == 0)
-					continue;
-				PD_direction[j] = 0;
-				parameter->i = PD_m;
-				Vector_Copy(PD_A[PD_m], parameter->a);
-				parameter->a[j] = 1;
-				parameter->b = PD_basePoint[j];
-				PD_m += 2;
-				PD_newInequations = true;
+#ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
+		PD_newInequations = false;
+		for (int j = 0; j < PP_N - 1; j++) {
+			if (PD_direction[j] > 0)
 				break;
-			}
-			if (PD_newInequations) {
-				PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-				*job = PP_JOB_PSEUDOPOJECTION;
-#ifdef PP_DEBUG //------------------------------------------//
-				cout << "\t\t\tD = ";							//
-				for (int j = 0; j < PP_N; j++)					//
-					cout << setw(PP_SETW) << PD_direction[j];	//
-				cout << endl;									//
-				//system("pause");								//
-				cout << "-----------------------------------\n";//
-#endif // PP_DEBUG -----------------------------------------//
-				return;
-			}
+			if (PD_direction[j] == 0)
+				continue;
+			PD_direction[j] = 0;
+			parameter->i = PD_m;
+			Vector_Copy(PD_A[PD_m], parameter->a);
+			parameter->a[j] = 1;
+			parameter->b = PD_basePoint[j];
+			PD_m++;
+			PD_newInequations = true;
+			break;
 		}
-
+		if (PD_newInequations) {
+			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
+			*job = PP_JOB_PSEUDOPOJECTION;
+#ifdef PP_DEBUG //------------------------------------------//
+			cout << "\t\t\tD = ";							//
+			for (int j = 0; j < PP_N; j++)					//
+				cout << setw(PP_SETW) << PD_direction[j];	//
+			cout << endl;									//
+			//system("pause");								//
+			cout << "-----------------------------------\n";//
+#endif // PP_DEBUG -----------------------------------------//
+			return;
+		}
+#endif
 		PD_numSeqShifts = 0;
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
@@ -499,12 +498,9 @@ void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* pa
 		parameterOutP->x[j] = parameterIn.x[j];
 	}
 	if (parameterIn.i > 0) {
-		for (int j = 0; j < PP_N; j++) {
-			PD_A[parameterIn.i][j] = parameterIn.a[j];
-			PD_A[parameterIn.i + 1][j] = -parameterIn.a[j];
-		}
-		PD_b[parameterIn.i] = parameterIn.b;
-		PD_b[parameterIn.i + 1] = -parameterIn.b;
+		for (int j = 0; j < PP_N; j++) 
+			PD_A[parameterIn.i][j] = -parameterIn.a[j];
+		PD_b[parameterIn.i] = -parameterIn.b;
 	}
 }
 

@@ -18,7 +18,7 @@ static bool		PD_pointIn;
 static double	PD_shiftLength;				// Shift length
 static int		PD_state;
 //========================== Problem structures ====================================
-static PT_matrix_T PD_A;
+static PT_matrix_T PD_A;					// Matrix of coefficients of inequalities 
 static PT_column_T PD_b;					// Column of the constant terms of the system Ax <= PD_b
 static PT_vector_T PD_c;					// Objective Function Coefficients
 static PT_vector_T PD_apex;					// Apex Point
