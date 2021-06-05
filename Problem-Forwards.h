@@ -14,6 +14,7 @@ PT_float_T	ObjectiveF(PT_vector_T x);
 void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
+bool		PointInPolytope_s(PT_vector_T point);
 void		ProblemOutput(double elapsedTime);
 bool		SaveSolution(PT_vector_T x, string solutionFile);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
@@ -33,8 +34,3 @@ void		Vector_Unit(PT_vector_T vector, PT_vector_T unitVector);
 //====================== Macros ================================
 #define PF_MIN(x,y) (x<y?x:y)
 #define PF_MAX(x,y) (x>y?x:y)
-//=========================== Debug Functions =====================================
-#ifdef PP_DEBUG
-bool PointOnHyperplane(PT_vector_T point, PT_vector_T a, PT_float_T b);
-void PointTouch(PT_vector_T point);
-#endif // PP_DEBUG

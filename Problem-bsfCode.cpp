@@ -12,10 +12,6 @@ This source code has been produced with using BSF-skeleton
 #include "BSF-SkeletonVariables.h"	// Skeleton Variables
 using namespace std;
 
-#ifdef PP_DEBUG
-#define PP_EPS_ON		5E-1
-#endif // PP_DEBUG
-
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PP_N; j++) // Generating initial approximation
 		parameter->x[j] = PD_apex[j];
@@ -25,12 +21,6 @@ void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_m = PP_M;
 	
-	/*if (PP_EPS_IN < 0.1) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "PP_EPS_IN must be equal or greater than 0.1!\n";
-		*success = false; return;
-	}/**/
-
 	// ------------- Load LPP data -------------------
 	PD_lppFile = PP_PATH;
 	PD_lppFile += PP_LPP_FILE;
@@ -235,18 +225,6 @@ void PC_bsf_JobDispatcher(
 		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << parameter->x[PP_N - 1];
 		cout << "\tF(u) = " << ObjectiveF(parameter->x);
 		cout << endl;
-
-		/*PointTouch(parameter->x);
-		cout << "--> Hyperplanes toushing u:\t";
-		for (int i = 0; i < PP_M; i++)
-			if (PD_pointTouch[i])
-				cout << i << "\t";
-		cout << endl;/**/
-
-		//if (SaveSolution(parameter->x, PP_SOLUTION_FILE))
-		//	cout << "\nPoint u is saved into the file '" << PP_SOLUTION_FILE << "'." << endl;
-		//system("pause");
-
 #endif // PP_DEBUG
 
 		// Preparations for determining direction
@@ -278,24 +256,7 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << parameter->x[j];
 		//cout << "\tF(w) = " << ObjectiveF(parameter->x);
 		cout << endl;/**/
-
-		/*PointTouch(parameter->x);
-		cout << "--> Hyperplanes toushing w:\t";
-		for (int i = 0; i < PP_M; i++)
-			if (PD_pointTouch[i])
-				cout << i << "\t";
-		cout << endl;
-		//system("pause");/**/
 #endif // PP_DEBUG
-
-		if (fabs(ObjectiveF(parameter->x) - ObjectiveF(PD_basePoint)) < PP_EPS_ZERO) {
-			*exit = true;
-#ifdef PP_DEBUG
-			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " == F(w) = " << ObjectiveF(parameter->x) << "\n";
-			//system("pause");
-#endif // PP_DEBUG
-			return;
-		}
 
 		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
 			*exit = true;
@@ -365,7 +326,6 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 #endif
-		PD_numSeqShifts = 0;
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
@@ -373,7 +333,6 @@ void PC_bsf_JobDispatcher(
 		return;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-		PD_numSeqShifts++;
 
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
@@ -394,12 +353,29 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (PD_shiftLength >= PP_EPS_SHIFT && PD_numSeqShifts < PP_MAX_NUM_SEQ_SHIFTS) {
+		if (PD_shiftLength >= PP_EPS_SHIFT) {
 			PD_shiftLength /= 2;
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
 		}
+
+		// Preparations for landing
+		if (!PointInPolytope_s(PD_basePoint))
+			Vector_Copy(PD_basePoint, parameter->x);
+		*job = PP_JOB_PSEUDOPOJECTION;
+		PD_state = PP_STATE_LANDING;
+		break;
+	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
+		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+			return;
+
+		Vector_Copy(parameter->x, PD_basePoint);
+		
+
+		// Preparations for determining direction
+		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
+		Vector_PlusEquals(parameter->x, objectiveVector);
 
 #ifdef PP_DEBUG
 		cout << "\n\t\t\tu = ";
@@ -407,29 +383,6 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << PD_basePoint[j];
 		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
 		cout << endl;
-		/*if (SaveSolution(PD_basePoint, PD_solutionFile))
-			cout << "Point u is saved into the file '" << PD_solutionFile << "'." << endl;/**/
-		//system("pause");
-
-		/*PointTouch(PD_basePoint);
-		cout << "--> Hyperplanes toushing t:\t";
-		for (int i = 0; i < PP_M; i++)
-			if (PD_pointTouch[i])
-				cout << i << "\t";
-		cout << endl;/**/
-#endif // PP_DEBUG
-
-		// Preparations for determining direction
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
-		Vector_Copy(PD_basePoint, parameter->x);
-		Vector_PlusEquals(parameter->x, objectiveVector);
-#ifdef PP_DEBUG
-		/*cout << "\t\t\tv = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << parameter->x[PP_N - 1];
-		//cout << "\tF(v) = " << ObjectiveF(parameter->x);
-		cout << endl;/**/
 		//system("pause");
 #endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
@@ -581,9 +534,8 @@ void PC_bsfAssignSublistLength(int value) { BSF_sv_sublistLength = value; };
 //---------------------------------- Problem functions -------------------------
 inline double Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 	double sum = 0;
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PP_N; j++)
 		sum += x[j] * y[j];
-	}
 	return sum;
 }
 
@@ -609,6 +561,13 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 
 inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point exactly belongs to the Half-space 
 	return Vector_DotProductSquare(a, point) <= b;
+}
+
+inline bool PointInPolytope_s(PT_vector_T point) { // If the point belongs to the Polytope with prescigion of PP_EPS_ZERO
+	for (int i = 0; i < PD_m; i++)
+		if (Vector_DotProductSquare(point, PD_A[i]) > PD_b[i] + PP_EPS_ZERO)
+			return false;
+	return true;
 }
 
 inline void Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint) {
@@ -786,17 +745,3 @@ inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculatin
 	double c_norm = sqrt(Vector_NormSquare(PD_c));
 	Vector_DivideByNumber(PD_c, c_norm, objectiveUnitVector);
 }
-
-#ifdef PP_DEBUG //=========================== Debug Functions =====================================
-static void PointTouch(PT_vector_T point) { // Mark the hyperplanes that touch the point
-	for (int i = 0; i < PP_M; i++)
-		if (PointOnHyperplane(point, PD_A[i], PD_b[i]))
-			PD_pointTouch[i] = true;
-		else
-			PD_pointTouch[i] = false;
-}
-
-inline bool PointOnHyperplane(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point belongs to the hyperplane with prescigion of PP_EPS_ZERO
-	return fabs(Vector_DotProductSquare(a, point) - b) < PP_EPS_ON;
-}
-#endif // PP_DEBUG ===================================================================================

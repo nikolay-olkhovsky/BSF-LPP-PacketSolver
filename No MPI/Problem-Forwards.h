@@ -13,7 +13,7 @@ bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T uni
 PT_float_T	ObjectiveF(PT_vector_T x);
 void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
-bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
+bool		PointInPolytope_s(PT_vector_T point);
 void		ProblemOutput(double elapsedTime);
 bool		SaveSolution(PT_vector_T x, const char* filename);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);

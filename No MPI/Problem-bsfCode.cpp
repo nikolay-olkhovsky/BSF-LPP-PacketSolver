@@ -12,10 +12,6 @@ This source code has been produced with using BSF-skeleton
 #include "BSF-SkeletonVariables.h"	// Skeleton Variables
 using namespace std;
 
-#ifdef PP_DEBUG
-#define PP_EPS_ON		5E-1
-#endif // PP_DEBUG
-
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PD_n; j++) // Generating initial approximation
 		parameter->x[j] = PD_apex[j];
@@ -24,21 +20,21 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	
+
 	// ------------- Load LPP data -------------------
-	/*cout << "Enter LPP file name: ";
-	cin >> PD_lppFile;/**/
 	PD_lppFile = PP_PATH;
 	PD_lppFile += PP_LPP_FILE;
 	const char* lppFile = PD_lppFile.c_str();
 
 	FILE* stream;
 	float buf;
+
 	stream = fopen(lppFile, "r");
+
 	if (stream == NULL) {
 		cout << "Failure of opening file '" << lppFile << "'.\n";
 		*success = false;
-		system("pause");
-		return;
+		system("pause"); return;
 	}
 
 	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
@@ -294,22 +290,14 @@ void PC_bsf_JobDispatcher(
 		cout << endl;/**/
 #endif // PP_DEBUG
 
-		if (fabs(ObjectiveF(parameter->x) - ObjectiveF(PD_basePoint)) < PP_EPS_ZERO) {
-			*exit = true;
-#ifdef PP_DEBUG
-			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " == F(w) = " << ObjectiveF(parameter->x) << "\n";
-			//system("pause");
-#endif // PP_DEBUG
-			return;
-		}
-
 		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
-			*exit = true;
 #ifdef PP_DEBUG
 			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " << ObjectiveF(parameter->x) << "\n";
 			//system("pause");
 #endif // PP_DEBUG
-			return;
+
+				*exit = true;
+				return;
 		}
 
 		PD_numDetDir++;
@@ -363,7 +351,6 @@ void PC_bsf_JobDispatcher(
 
 		WriteTrace(PD_tracePoint); // Trace!!! --------->>>
 
-		//PD_numSeqShifts = 0;
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
@@ -371,7 +358,6 @@ void PC_bsf_JobDispatcher(
 		return;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-		//PD_numSeqShifts++;
 
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
@@ -392,35 +378,36 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		//if (PD_shiftLength >= PP_EPS_SHIFT && PD_numSeqShifts < PP_MAX_NUM_SEQ_SHIFTS) {
 		if (PD_shiftLength >= PP_EPS_SHIFT) {
 			PD_shiftLength /= 2;
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
 		}
+
+		// Preparations for landing
+		if (!PointInPolytope_s(PD_basePoint))
+			Vector_Copy(PD_basePoint, parameter->x);
+		*job = PP_JOB_PSEUDOPOJECTION;
+		PD_state = PP_STATE_LANDING;
+		break;
+	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
+		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+			return;
+
+		Vector_Copy(parameter->x, PD_basePoint);
+		StoreTracePoint(PD_basePoint);
+
+		// Preparations for determining direction
+		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
+		Vector_PlusEquals(parameter->x, objectiveVector);
+
 #ifdef PP_DEBUG
 		cout << "\n\t\t\tu = ";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_basePoint[j];
 		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
 		cout << endl;
-		//system("pause");
-#endif // PP_DEBUG
-
-		StoreTracePoint(PD_basePoint);
-
-		// Preparations for determining direction
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
-		Vector_Copy(PD_basePoint, parameter->x);
-		Vector_PlusEquals(parameter->x, objectiveVector);
-#ifdef PP_DEBUG
-		/*cout << "\t\t\tv = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << parameter->x[PD_n - 1];
-		//cout << "\tF(v) = " << ObjectiveF(parameter->x);
-		cout << endl;/**/
 		//system("pause");
 #endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
@@ -552,22 +539,17 @@ inline void Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjecti
 inline double Vector_NormSquare(PT_vector_T x) { 
 	double sum = 0;
 
-	for (int j = 0; j < PD_n; j++) {
+	for (int j = 0; j < PD_n; j++) 
 		sum += x[j] * x[j];
-	}
 	return sum;
 }
 
-inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_ZERO
+inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_IN
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
 }
 
-inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point exactly belongs to the Half-space 
-	return Vector_DotProductSquare(a, point) <= b;
-}
-
-inline bool PointInPolytope(PT_vector_T point) {
+inline bool PointInPolytope_s(PT_vector_T point) { // If the point belongs to the Polytope with prescigion of PP_EPS_ZERO
 	for (int i = 0; i < PD_m; i++)
 			if (Vector_DotProductSquare(point, PD_A[i]) > PD_b[i] + PP_EPS_ZERO)
 			return false;
