@@ -286,7 +286,7 @@ void PC_bsf_JobDispatcher(
 		cout << "\t\t\tw = ";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << parameter->x[j];
-		//cout << "\tF(w) = " << ObjectiveF(parameter->x);
+		cout << "\tF(w) = " << ObjectiveF(parameter->x);
 		cout << endl;/**/
 #endif // PP_DEBUG
 
@@ -295,9 +295,8 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " << ObjectiveF(parameter->x) << "\n";
 			//system("pause");
 #endif // PP_DEBUG
-
-				*exit = true;
-				return;
+			* exit = true;
+			return;
 		}
 
 		PD_numDetDir++;
