@@ -12,6 +12,8 @@ This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky
 using namespace std;
 //======================================== Problem-independent codes (don't modify them) ====================================
 int main(int argc, char* argv[]) {
+	PC_bsf_MainArguments(argc, argv);
+
 	PC_bsfAssignMpiRank(0);
 	PC_bsfAssignMpiMaster(0);
 	PC_bsfAssignNumOfWorkers(1);

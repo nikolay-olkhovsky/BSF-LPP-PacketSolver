@@ -12,32 +12,52 @@ This source code has been produced with using BSF-skeleton
 #include "BSF-SkeletonVariables.h"	// Skeleton Variables
 using namespace std;
 
+void PC_bsf_MainArguments(int argc, char* argv[]) {
+	PD_lppFile = PP_PATH;
+	PD_lppFile += PP_LPP_FILE;
+	PD_solutionFile = PP_PATH;
+	PD_solutionFile += PP_SOLUTION_FILE;
+	PD_traceFile = PP_PATH;
+	PD_traceFile += PP_TRACE_FILE;
+
+	if (argc > 1) {
+		PD_lppFile = argv[1];
+		if (argc > 2) {
+			PD_solutionFile = argv[2];
+			if (argc > 2) 
+				PD_traceFile = argv[3];
+		}
+	}
+	else
+		return;
+}
+
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PD_n; j++) // Generating initial approximation
-		parameter->x[j] = PD_apex[j];
+		parameter->x[j] = PD_basePoint[j];
 };
 
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	
-
 	// ------------- Load LPP data -------------------
-	PD_lppFile = PP_PATH;
-	PD_lppFile += PP_LPP_FILE;
 	const char* lppFile = PD_lppFile.c_str();
 
 	FILE* stream;
 	float buf;
-
 	stream = fopen(lppFile, "r");
-
+	
 	if (stream == NULL) {
 		cout << "Failure of opening file '" << lppFile << "'.\n";
-		*success = false;
-		system("pause"); return;
+		*success = false; system("pause");
+		return;
 	}
 
-	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
+	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) { 
+		cout << "Unexpected end of file" << endl; 
+		*success = false; 
+		return; 
+	}
 	
 	if (PD_n > PP_MAX_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
@@ -77,12 +97,7 @@ void PC_bsf_Init(bool* success) {
 
 	fclose(stream);
 
-	PD_solutionFile = PP_PATH;
-	PD_solutionFile += PP_SOLUTION_FILE;
-
 	// Open trace file
-	PD_traceFile = PP_PATH;
-	PD_traceFile += PP_TRACE_FILE;
 	const char* traceFile = PD_traceFile.c_str();
 	PD_traceStream = fopen(traceFile, "w");
 	if (stream == NULL) {
@@ -92,22 +107,28 @@ void PC_bsf_Init(bool* success) {
 		return;
 	}
 
-	// Generating a point inside the polytope
+	// Generating Coordinates of starting point
+	srand((unsigned)time(NULL));
+	RndPoint(PD_basePoint, (PT_float_T)PP_MAX_START_POINT_COORD);/**/
+	/*for (int j = 0; j < PD_n; j++)
+		PD_basePoint[j] = (double)PP_SF / 2;/**/
+	/*PD_basePoint[0] = 45.293;
+	PD_basePoint[1] = 175.02;
+	PD_basePoint[2] = 17.4829;/**/
+
+#ifdef PP_DEBUG
+	PD_m = PD_m_init;
+	cout << "Starting base point = ";
 	for (int j = 0; j < PD_n; j++)
-		PD_basePoint[j] = (double)PP_SF / 2;
+		cout << setw(PP_SETW) << PD_basePoint[j];
+	cout << "\tIn = " << (PointInPolytope_s(PD_basePoint)? "Yes\n" : "No\n") << endl;
+#endif // PP_DEBUG /**/
 
-	// Generating Coordinates of Apex Point
-	ObjectiveUnitVector(PD_objectiveUnitVector);
-	Vector_MultiplyByNumber(PD_objectiveUnitVector, (PT_float_T)PP_DIST_TO_APEX, PD_apex);
-	Vector_PlusEquals(PD_apex, PD_basePoint);
-
-	/*if (PD_apex[PD_n - 1] < (PT_float_T)PP_SF * 1.1) {
-		if (BSF_sv_mpiRank == 0)
-			cout << "PC_bsf_Init.Error: PD_apex[PD_n - 1] = " << PD_apex[PD_n - 1] << " < PP_SF * 1.1 = " << PP_SF * 1.1 << endl;
-		*success = false;
-		return;
-	}/**/
 	PD_m = PP_MAX_M;
+
+	ObjectiveUnitVector(PD_objectiveUnitVector);
+	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
+
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -125,17 +146,14 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	*success = Vector_ProjectOnHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b, reduceElem->projection);
 }
 
-// 1. Movement on Polytope
+// 1. Approximate check
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem, int* success) {
-	if (PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b))
-		reduceElem->pointIn = true;
-	else
-		reduceElem->pointIn = false;
+	reduceElem->pointIn = PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
 }
 
-// 2. ...
+// 2. Exact check
 void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem, int* success) {
-	// not used
+	reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
 }
 
 void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem, int* success) {
@@ -147,21 +165,21 @@ void PC_bsf_ReduceF(PT_bsf_reduceElem_T* x, PT_bsf_reduceElem_T* y, PT_bsf_reduc
 	Vector_Addition(x->projection, y->projection, z->projection); 
 }
 
-// 1. Check
+// 1. Approximate check
 void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
 	z->pointIn = x->pointIn && y->pointIn;
 }
 
-// 2. On
+// 2. Exact check
 void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
-	z->on = x->on + y->on;
+	z->pointIn = x->pointIn && y->pointIn;
 }
 
 void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf_reduceElem_T_3* z) {
 	// not used
 }
 
-//0. Apex pseudo-projection onto Politope
+//0. Start
 void PC_bsf_ProcessResults(
 	PT_bsf_reduceElem_T* reduceResult,
 	int reduceCounter, // Number of successfully produced Elrments of Reduce List
@@ -210,7 +228,15 @@ void PC_bsf_ProcessResults_2(
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
 ) {
-	// not used
+#ifdef PP_MAX_ITER_COUNT
+	if (BSF_sv_iterCounter > PP_MAX_ITER_COUNT) {
+		cout << "-------------> Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = " << PP_MAX_ITER_COUNT << endl;
+		*exit = true;
+		return;
+	}
+#endif // PP_MAX_ITER_COUNT
+
+	PD_pointIn = reduceResult->pointIn;
 }
 
 void PC_bsf_ProcessResults_3(
@@ -228,61 +254,75 @@ void PC_bsf_JobDispatcher(
 	int *job,
 	bool *exit
 ) {
-	PT_vector_T objectiveVector;
 	const char* traceFile = PD_traceFile.c_str();
-	static bool fistTime = true;
 
 	parameter->i = 0;
 
 	switch (PD_state) {
 	case PP_STATE_START://-------------------------- Start -----------------------------
-		// Preparations for finding beginnig of path
-		PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-		*job = PP_JOB_PSEUDOPOJECTION;
+		if (PointInPolytope_s(PD_basePoint)) { 
+			Vector_Copy(PD_objectiveUnitVector, PD_direction);
+			PD_shiftLength = PP_START_SHIFT_LENGTH;
+			// Preparations for moving inside the polytope
+			PD_numShiftsSameLength = 0;
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+			*job = PP_JOB_CHECK_S;
+			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+		}
+		else {
+			// Preparations for finding a start point
+			PD_state = PP_STATE_FIND_START_POINT;
+			*job = PP_JOB_PSEUDOPOJECTION;
+		}
 		break;
-	case PP_STATE_FIND_BEGINNING_OF_PATH://------------------ u: Find Beginning of Path -----------------------------
-		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
+		if (PD_pointIn) {
+			PD_numDetDir = 0;
+			PD_numShiftsSameLength++;
+			if (PD_numShiftsSameLength > PP_MAX_NUM_SHIFTS_SAME_LENGTH) {
+				PD_shiftLength *= 2;
+				PD_numShiftsSameLength = 0;
+			}
+#ifdef PP_DEBUG
+			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
+			for (int j = 0; j < PD_n; j++)
+				cout << setw(PP_SETW) << parameter->x[j];
+			//cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << endl;
+#endif // PP_DEBUG
+			Vector_Copy(parameter->x, PD_basePoint);
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
-
-		if (fistTime) {
-			StoreTracePoint(parameter->x);
-			fistTime = false;
 		}
 
+		if (PD_shiftLength >= PP_EPS_RELAX) {
+			PD_shiftLength /= 2;
+			PD_numShiftsSameLength = 0;
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+			return;
+		}
+		WriteTrace(parameter->x);
 #ifdef PP_DEBUG
-		cout << "\t\t\tu = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << parameter->x[PD_n - 1];
-		cout << "\tF(u) = " << ObjectiveF(parameter->x);
-		cout << endl;
+		cout << "-----------------------------------\n";
 #endif // PP_DEBUG
 
 		// Preparations for determining direction
-		ObjectiveUnitVector(PD_objectiveUnitVector);
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
 		Vector_Copy(parameter->x, PD_basePoint);
-		Vector_PlusEquals(parameter->x, objectiveVector);
-/*#ifdef PP_DEBUG
-		cout << "\t\t\tv = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << parameter->x[PD_n - 1];
-		cout << "\tF(v) = " << ObjectiveF(parameter->x);
-		cout << endl;
-		//system("pause");
-#endif // PP_DEBUG /**/
-		* job = PP_JOB_PSEUDOPOJECTION;
+		Vector_PlusEquals(parameter->x, PD_objectiveVector);
+		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
 		PD_numDetDir = 0;
 		break;
-
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
 			return;
 
 #ifdef PP_DEBUG
-		fflush(PD_traceStream);
+		cout << "\t\t\tu = ";
+		for (int j = 0; j < PD_n; j++)
+			cout << setw(PP_SETW) << PD_basePoint[j];
+		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
+		cout << endl;/**/
 		cout << "\t\t\tw = ";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << parameter->x[j];
@@ -290,12 +330,21 @@ void PC_bsf_JobDispatcher(
 		cout << endl;/**/
 #endif // PP_DEBUG
 
+		if (fabs(ObjectiveF(parameter->x) - ObjectiveF(PD_basePoint)) < PP_EPS_OBJECTIVE) {
+			*exit = true;
+#ifdef PP_DEBUG
+			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " == F(w) = " << ObjectiveF(parameter->x) << "\n";
+			//system("pause");
+#endif // PP_DEBUG
+			return;
+		}
+
 		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
+			*exit = true;
 #ifdef PP_DEBUG
 			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " << ObjectiveF(parameter->x) << "\n";
 			//system("pause");
 #endif // PP_DEBUG
-			* exit = true;
 			return;
 		}
 
@@ -335,29 +384,27 @@ void PC_bsf_JobDispatcher(
 				break;
 			if (PD_direction[j] == 0)
 				continue;
-			PD_A[PD_m + 1][j] = -1;
-			PD_b[PD_m + 1] = -PD_basePoint[j];
+
+
+			PD_A[PD_m][j] = -1;
+			PD_b[PD_m] = -PD_basePoint[j];
 			PD_m++;
 			PD_newInequations = true;
 			break;
 		}
 		if (PD_newInequations) {
-			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-			*job = PP_JOB_PSEUDOPOJECTION;
+			Vector_Copy(PD_basePoint, parameter->x);
+			Vector_PlusEquals(parameter->x, PD_objectiveVector);
 			return;
 		}
 #endif
-
-		WriteTrace(PD_tracePoint); // Trace!!! --------->>>
-
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-		return;
+		break;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
 			PD_numShiftsSameLength++;
@@ -369,7 +416,7 @@ void PC_bsf_JobDispatcher(
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PD_n; j++)
 				cout << setw(PP_SETW) << parameter->x[j];
-			// cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG /**/
 			Vector_Copy(parameter->x, PD_basePoint);
@@ -385,8 +432,7 @@ void PC_bsf_JobDispatcher(
 		}
 
 		// Preparations for landing
-		if (!PointInPolytope_s(PD_basePoint))
-			Vector_Copy(PD_basePoint, parameter->x);
+		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
 		break;
@@ -395,22 +441,39 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-		StoreTracePoint(PD_basePoint);
+		WriteTrace(PD_basePoint);
 
 		// Preparations for determining direction
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
-		Vector_PlusEquals(parameter->x, objectiveVector);
+		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 
 #ifdef PP_DEBUG
-		cout << "\n\t\t\tu = ";
-		for (int j = 0; j < PD_n; j++)
-			cout << setw(PP_SETW) << PD_basePoint[j];
-		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
-		cout << endl;
-		//system("pause");
+		cout << "-----------------------------------\n";
 #endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+		break;
+	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
+		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+			return;
+		// Preparations for moving inside the polytope
+		Vector_Copy(parameter->x, PD_basePoint);
+		Vector_Copy(PD_objectiveUnitVector, PD_direction);
+		PD_shiftLength = PP_START_SHIFT_LENGTH;
+		PD_numShiftsSameLength = 0;
+		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+		if (PointInPolytope_s(parameter->x)) {
+			*job = PP_JOB_CHECK_S;
+			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+		}
+		else {
+			WriteTrace(PD_basePoint);
+			// Preparations for determining direction
+			Vector_Copy(PD_basePoint, parameter->x);
+			Vector_PlusEquals(parameter->x, PD_objectiveVector);
+			*job = PP_JOB_PSEUDOPOJECTION;
+			PD_state = PP_STATE_DETERMINE_DIRECTION;
+			PD_numDetDir = 0;
+		}
 		break;
 	default://------------------------------------- default -----------------------------------
 		cout << "PC_bsf_JobDispatcher: Undefined state!" << endl;
@@ -429,7 +492,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	}
 #endif // PP_MATRIX_OUTPUT
-	cout << "-------------------------------------------" << endl;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
@@ -437,19 +499,16 @@ void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* pa
 		parameterOutP->x[j] = parameterIn.x[j];
 	}
 	if (parameterIn.i > 0) {
-		for (int j = 0; j < PD_n; j++) {
+		for (int j = 0; j < PD_n; j++) 
 			PD_A[parameterIn.i][j] = parameterIn.a[j];
-			PD_A[parameterIn.i + 1][j] = -parameterIn.a[j];
-		}
 		PD_b[parameterIn.i] = parameterIn.b;
-		PD_b[parameterIn.i + 1] = -parameterIn.b;
 	}
 }
 
-// 0. Apex Pseudo-pojection  ==========================================================
+// 0. Start
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob) {
-	cout << "------------------ 0. Apex Pseudo-pojection. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
+	cout << "------------------ 0. Start. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << parameter.x[j];
@@ -466,21 +525,33 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if(PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_basePoint[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_basePoint[PD_n - 1];
 	cout << endl;
 	cout << "PD_direction:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if(PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_direction[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_direction[PD_n - 1];
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 };
 
-// 2. ...
+// 2. Movement iside Polytope
 void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob)
 {
-	// not used
+	cout << "------------------ 2. Movement inside Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
+	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	cout << "PD_basePoint:";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+		cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_basePoint[PD_n - 1];
+	cout << endl;
+	cout << "PD_direction:";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+		cout << setw(PP_SETW) << PD_direction[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_direction[PD_n - 1];
+	cout << endl;
+	cout << "Sift Length = " << PD_shiftLength << endl;
 }
 
 
@@ -490,7 +561,7 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 	// not used
 }
 
-// 0. Apex Pseudo-pojection
+// 0. Start
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {
 	ProblemOutput(t);
 }
@@ -500,7 +571,7 @@ void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCount
 	ProblemOutput(t);
 }
 
-// 2. Point Pseudo-projection
+// 2. Movement inside Polytope
 void PC_bsf_ProblemOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,double t) {
 	ProblemOutput(t);
 }
@@ -523,9 +594,8 @@ void PC_bsfAssignSublistLength(int value) { BSF_sv_sublistLength = value; };
 //---------------------------------- Problem functions -------------------------
 inline double Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 	double sum = 0;
-	for (int j = 0; j < PD_n; j++) {
+	for (int j = 0; j < PD_n; j++) 
 		sum += x[j] * y[j];
-	}
 	return sum;
 }
 
@@ -538,8 +608,9 @@ inline void Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjecti
 inline double Vector_NormSquare(PT_vector_T x) { 
 	double sum = 0;
 
-	for (int j = 0; j < PD_n; j++) 
+	for (int j = 0; j < PD_n; j++) {
 		sum += x[j] * x[j];
+	}
 	return sum;
 }
 
@@ -548,9 +619,13 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
 }
 
-inline bool PointInPolytope_s(PT_vector_T point) { // If the point belongs to the Polytope with prescigion of PP_EPS_ZERO
+inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point belongs to the Halfspace
+	return Vector_DotProductSquare(a, point) <= b;
+}
+
+inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the polytope
 	for (int i = 0; i < PD_m; i++)
-			if (Vector_DotProductSquare(point, PD_A[i]) > PD_b[i] + PP_EPS_ZERO)
+		if (!PointInHalfspace_s(x, PD_A[i], PD_b[i]))
 			return false;
 	return true;
 }
@@ -590,13 +665,6 @@ inline void Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint) { // toPoint
 	for (int j = 0; j < PD_n; j++) {
 		toPoint[j] = fromPoint[j];
 	}
-}
-
-inline void StoreTracePoint(PT_vector_T point) {
-	for (int j = 0; j < PD_n; j++) {
-		PD_tracePoint[j] = point[j];
-	}
-	Vector_Round(PD_tracePoint);
 }
 
 inline void Vector_PlusEquals(PT_vector_T equalVector, PT_vector_T plusVector) { // equalVector += plusVector
@@ -693,12 +761,6 @@ static bool SaveSolution(PT_vector_T x, const char* filename) {
 	return true;
 }
 
-inline void WriteTrace(PT_vector_T x) {
-	for (int j = 0; j < PD_n; j++)
-		fprintf(PD_traceStream, "%f\t", x[j]);
-	fprintf(PD_traceStream, "\n");
-}
-
 // Point projection onto Half-space <a,x> <= b
 inline bool // true if the point does not belong to the half-space and false otherwise 
 Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vector_T projection) {
@@ -720,20 +782,6 @@ Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vec
 	return true;
 }
 
-inline void ProblemOutput(double elapsedTime) {
-	WriteTrace(PD_basePoint);
-	for (int j = 0; j < PD_n; j++)
-		cout << setw(PP_SETW) << PD_basePoint[j];
-	cout << endl;
-	fclose(PD_traceStream);
-	cout << "=============================================" << endl;
-	const char* solutionFile = PD_solutionFile.c_str();
-	if (SaveSolution(PD_basePoint, solutionFile))
-		cout << "Solution is saved into the file '" << PD_solutionFile << "'." << endl;
-	cout << "Trace is saved into the file '" << PD_traceFile << "'." << endl;
-	//system("pause");
-}
-
 inline PT_float_T Distance(PT_vector_T x, PT_vector_T y) {
 	PT_vector_T z;
 	Vector_Subtraction(x, y, z);
@@ -743,4 +791,25 @@ inline PT_float_T Distance(PT_vector_T x, PT_vector_T y) {
 inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculating Objective Unit Vector
 	double c_norm = sqrt(Vector_NormSquare(PD_c));
 	Vector_DivideByNumber(PD_c, c_norm, objectiveUnitVector);
+}
+
+inline void ProblemOutput(double elapsedTime) {
+	fclose(PD_traceStream);
+	const char* solutionFile = PD_solutionFile.c_str();
+	SaveSolution(PD_basePoint, solutionFile);
+}
+
+inline PT_float_T RndPositiveValue(PT_float_T rndMax) {
+	return (((PT_float_T)rand() / ((PT_float_T)RAND_MAX + 1)) * rndMax);
+}
+
+inline void RndPoint(PT_vector_T point, PT_float_T maxValue) {
+	for (int i = 0; i < PD_n; i++)
+		point[i] = RndPositiveValue(maxValue);
+}
+
+inline void WriteTrace(PT_vector_T x) {
+	for (int j = 0; j < PD_n; j++)
+		fprintf(PD_traceStream, "%f\t", x[j]);
+	fprintf(PD_traceStream, "\n");
 }
