@@ -10,3 +10,4 @@ This source code has been produced with using BSF-skeleton
 #include <iomanip>
 #include <limits.h>
 #include <math.h>
+#include <omp.h>

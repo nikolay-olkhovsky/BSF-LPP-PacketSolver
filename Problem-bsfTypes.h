@@ -30,7 +30,7 @@ struct PT_bsf_reduceElem_T_1 {	// Type of reduce-list elements for Job 1
 };
 
 struct PT_bsf_reduceElem_T_2 {	// Type of reduce-list elements for Job 2
-	int on;	// Point projection onto hyperplane
+	bool pointIn;
 };
 
 struct PT_bsf_reduceElem_T_3 {	// Type of reduce-list elements for Job 3

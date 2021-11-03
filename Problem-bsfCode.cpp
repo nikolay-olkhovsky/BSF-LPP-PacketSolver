@@ -14,7 +14,7 @@ using namespace std;
 
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PP_N; j++) // Generating initial approximation
-		parameter->x[j] = PD_apex[j];
+		parameter->x[j] = PD_basePoint[j];
 };
 
 void PC_bsf_Init(bool* success) {
@@ -27,28 +27,26 @@ void PC_bsf_Init(bool* success) {
 	const char* lppFile = PD_lppFile.c_str();
 
 	FILE* stream;
-	float buf;
-	int m, n;
+	float buf; 	int m, n;
 	stream = fopen(lppFile, "r");
 	
 	if (stream == NULL) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << lppFile << "'.\n";
-		*success = false; return;
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Failure of opening file '" << lppFile << "'.\n";
+		*success = false; 
+		return;
 	}
 
 	if (fscanf(stream, "%d%d", &m, &n) == 0) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
-			cout << "Unexpected end of file" << endl; 
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; 
 		*success = false; 
 		return; 
 	}
 
 	if (n != PP_N || m != PP_M) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Error in input data '" << lppFile << "': PP_N != n and/or PP_M != m (PP_N = "
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Error in input data '" << lppFile << "': PP_N != n and/or PP_M != m (PP_N = "
 			<< PP_N << ", n = " << n << "; PP_M = " << PP_M << ", m = " << m << ").\n";
-		*success = false; return;
+		*success = false; 
+		return;
 	}
 
 	for (int i = 0; i < PP_M; i++) {
@@ -69,21 +67,12 @@ void PC_bsf_Init(bool* success) {
 	PD_solutionFile = PP_PATH;
 	PD_solutionFile += PP_SOLUTION_FILE;
 
-	// Generating a point inside the polytope
+	// Generating Coordinates of starting point
 	for (int j = 0; j < PP_N; j++)
 		PD_basePoint[j] = (double)PP_SF / 2;
 
-	// Generating Coordinates of Apex Point
 	ObjectiveUnitVector(PD_objectiveUnitVector);
-	Vector_MultiplyByNumber(PD_objectiveUnitVector, (double)PP_DIST_TO_APEX, PD_apex);
-	Vector_PlusEquals(PD_apex, PD_basePoint);
-
-	if (PD_apex[PP_N - 1] < PP_SF * 1.1) {
-		if (BSF_sv_mpiRank == 0)
-			cout << "PC_bsf_Init.Error: PD_apex[PP_N - 1] = " << PD_apex[PP_N - 1] << " < PP_SF * 1.1 = " << PP_SF * 1.1 << endl;
-		*success = false;
-		return;
-	}
+	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -101,17 +90,14 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 	*success = Vector_ProjectOnHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b, reduceElem->projection);
 }
 
-// 1. Movement on Polytope
+// 1. Approximate check
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem, int* success) {
-	if (PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b))
-		reduceElem->pointIn = true;
-	else
-		reduceElem->pointIn = false;
+	reduceElem->pointIn = PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
 }
 
-// 2. ...
+// 2. Exact check
 void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem, int* success) {
-	// not used
+	reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
 }
 
 void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem, int* success) {
@@ -123,21 +109,21 @@ void PC_bsf_ReduceF(PT_bsf_reduceElem_T* x, PT_bsf_reduceElem_T* y, PT_bsf_reduc
 	Vector_Addition(x->projection, y->projection, z->projection); 
 }
 
-// 1. Check
+// 1. Approximate check
 void PC_bsf_ReduceF_1(PT_bsf_reduceElem_T_1* x, PT_bsf_reduceElem_T_1* y, PT_bsf_reduceElem_T_1* z) {
 	z->pointIn = x->pointIn && y->pointIn;
 }
 
-// 2. On
+// 2. Exact check
 void PC_bsf_ReduceF_2(PT_bsf_reduceElem_T_2* x, PT_bsf_reduceElem_T_2* y, PT_bsf_reduceElem_T_2* z) {
-	z->on = x->on + y->on;
+	z->pointIn = x->pointIn && y->pointIn;
 }
 
 void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf_reduceElem_T_3* z) {
 	// not used
 }
 
-//0. Apex pseudo-projection onto Politope
+//0. Start
 void PC_bsf_ProcessResults(
 	PT_bsf_reduceElem_T* reduceResult,
 	int reduceCounter, // Number of successfully produced Elrments of Reduce List
@@ -186,7 +172,15 @@ void PC_bsf_ProcessResults_2(
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
 ) {
-	// not used
+#ifdef PP_MAX_ITER_COUNT
+	if (BSF_sv_iterCounter > PP_MAX_ITER_COUNT) {
+		cout << "-------------> Acceptable maximum number of iterations is exceeded: PP_MAX_ITER_COUNT = " << PP_MAX_ITER_COUNT << endl;
+		*exit = true;
+		return;
+	}
+#endif // PP_MAX_ITER_COUNT
+
+	PD_pointIn = reduceResult->pointIn;
 }
 
 void PC_bsf_ProcessResults_3(
@@ -204,59 +198,91 @@ void PC_bsf_JobDispatcher(
 	int *job,
 	bool *exit
 ) {
-	PT_vector_T objectiveVector;
+
+
 
 	parameter->i = 0;
 
 	switch (PD_state) {
 	case PP_STATE_START://-------------------------- Start -----------------------------
-		// Preparations for finding beginnig of path
-		PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-		*job = PP_JOB_PSEUDOPOJECTION;
+		if (PointInPolytope_s(PD_basePoint)) {
+			Vector_Copy(PD_objectiveUnitVector, PD_direction);
+			PD_shiftLength = PP_START_SHIFT_LENGTH;
+			// Preparations for moving inside the polytope
+			PD_numShiftsSameLength = 0;
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+			*job = PP_JOB_CHECK_S;
+			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+		}
+		else {
+			// Preparations for finding a start point
+			PD_state = PP_STATE_FIND_START_POINT;
+			*job = PP_JOB_PSEUDOPOJECTION;
+		}
 		break;
-	case PP_STATE_FIND_BEGINNING_OF_PATH://------------------ u: Find Beginning of Path -----------------------------
-		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
+		if (PD_pointIn) {
+			PD_numDetDir = 0;
+			PD_numShiftsSameLength++;
+			if (PD_numShiftsSameLength > PP_MAX_NUM_SHIFTS_SAME_LENGTH) {
+				PD_shiftLength *= 2;
+				PD_numShiftsSameLength = 0;
+			}
+#ifdef PP_DEBUG
+			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
+			for (int j = 0; j < PP_N; j++)
+				cout << setw(PP_SETW) << parameter->x[j];
+			//cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << endl;
+#endif // PP_DEBUG
+			Vector_Copy(parameter->x, PD_basePoint);
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
+		}
+
+		if (PD_shiftLength >= PP_EPS_RELAX) {
+			PD_shiftLength /= 2;
+			PD_numShiftsSameLength = 0;
+			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+			return;
+		}
 
 #ifdef PP_DEBUG
-		cout << "\t\t\tu = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << parameter->x[PP_N - 1];
-		cout << "\tF(u) = " << ObjectiveF(parameter->x);
-		cout << endl;
+		cout << "-----------------------------------\n";
 #endif // PP_DEBUG
 
 		// Preparations for determining direction
-		ObjectiveUnitVector(PD_objectiveUnitVector);
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
 		Vector_Copy(parameter->x, PD_basePoint);
-		Vector_PlusEquals(parameter->x, objectiveVector);
-/*#ifdef PP_DEBUG
-		cout << "\t\t\tv = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
-			cout << setw(PP_SETW) << parameter->x[j];
-		if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << parameter->x[PP_N - 1];
-		cout << "\tF(v) = " << ObjectiveF(parameter->x);
-		cout << endl;
-		//system("pause");
-#endif // PP_DEBUG /**/
-		* job = PP_JOB_PSEUDOPOJECTION;
+		Vector_PlusEquals(parameter->x, PD_objectiveVector);
+		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
 		PD_numDetDir = 0;
 		break;
-
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
 			return;
 
 #ifdef PP_DEBUG
+		cout << "\t\t\tu = ";
+		for (int j = 0; j < PP_N; j++)
+			cout << setw(PP_SETW) << PD_basePoint[j];
+		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
+		cout << endl;/**/
 		cout << "\t\t\tw = ";
 		for (int j = 0; j < PP_N; j++)
 			cout << setw(PP_SETW) << parameter->x[j];
 		//cout << "\tF(w) = " << ObjectiveF(parameter->x);
 		cout << endl;/**/
 #endif // PP_DEBUG
+
+		if (fabs(ObjectiveF(parameter->x) - ObjectiveF(PD_basePoint)) < PP_EPS_OBJECTIVE) {
+			*exit = true;
+#ifdef PP_DEBUG
+			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " == F(w) = " << ObjectiveF(parameter->x) << "\n";
+			//system("pause");
+#endif // PP_DEBUG
+			return;
+		}
 
 		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
 			*exit = true;
@@ -303,26 +329,17 @@ void PC_bsf_JobDispatcher(
 				break;
 			if (PD_direction[j] == 0)
 				continue;
-			PD_direction[j] = 0;
 			parameter->i = PD_m;
 			Vector_Copy(PD_A[PD_m], parameter->a);
-			parameter->a[j] = 1;
-			parameter->b = PD_basePoint[j];
+			parameter->a[j] = -1;
+			parameter->b = -PD_basePoint[j];
 			PD_m++;
 			PD_newInequations = true;
 			break;
 		}
 		if (PD_newInequations) {
-			PD_state = PP_STATE_FIND_BEGINNING_OF_PATH;
-			*job = PP_JOB_PSEUDOPOJECTION;
-#ifdef PP_DEBUG //------------------------------------------//
-			cout << "\t\t\tD = ";							//
-			for (int j = 0; j < PP_N; j++)					//
-				cout << setw(PP_SETW) << PD_direction[j];	//
-			cout << endl;									//
-			//system("pause");								//
-			cout << "-----------------------------------\n";//
-#endif // PP_DEBUG -----------------------------------------//
+			Vector_Copy(PD_basePoint, parameter->x);
+			Vector_PlusEquals(parameter->x, PD_objectiveVector);
 			return;
 		}
 #endif
@@ -330,10 +347,9 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-		return;
+		break;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
 			PD_numShiftsSameLength++;
@@ -361,8 +377,7 @@ void PC_bsf_JobDispatcher(
 		}
 
 		// Preparations for landing
-		if (!PointInPolytope_s(PD_basePoint))
-			Vector_Copy(PD_basePoint, parameter->x);
+		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
 		break;
@@ -371,22 +386,38 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-		
+
 
 		// Preparations for determining direction
-		Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, objectiveVector);
-		Vector_PlusEquals(parameter->x, objectiveVector);
+		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 
 #ifdef PP_DEBUG
-		cout << "\n\t\t\tu = ";
-		for (int j = 0; j < PP_N; j++)
-			cout << setw(PP_SETW) << PD_basePoint[j];
-		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
-		cout << endl;
-		//system("pause");
+		cout << "-----------------------------------\n";
 #endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+		break;
+	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
+		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
+			return;
+		// Preparations for moving inside the polytope
+		Vector_Copy(parameter->x, PD_basePoint);
+		Vector_Copy(PD_objectiveUnitVector, PD_direction);
+		PD_shiftLength = PP_START_SHIFT_LENGTH;
+		PD_numShiftsSameLength = 0;
+		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+		if (PointInPolytope_s(parameter->x)) {
+			*job = PP_JOB_CHECK_S;
+			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+		}
+		else {
+			// Preparations for determining direction
+			Vector_Copy(PD_basePoint, parameter->x);
+			Vector_PlusEquals(parameter->x, PD_objectiveVector);
+			*job = PP_JOB_PSEUDOPOJECTION;
+			PD_state = PP_STATE_DETERMINE_DIRECTION;
+			PD_numDetDir = 0;
+		}
 		break;
 	default://------------------------------------- default -----------------------------------
 		cout << "PC_bsf_JobDispatcher: Undefined state!" << endl;
@@ -414,7 +445,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Dimension: N = " << PP_N << endl;
 	cout << "Number of Constraints: M = " << PP_M << endl;
 	cout << "Scale Factor: SF = " << PP_SF << endl;
-	cout << "Distance to Apex = " << PP_DIST_TO_APEX << endl;
 	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
 	cout << "Eps Zero:\t" << PP_EPS_ZERO << endl;
@@ -435,32 +465,28 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Objective Function:\t"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_c[j];
 	cout << (PP_OUTPUT_LIMIT < PP_N ? "	..." : "") << endl;
-	cout << "Interior point:\t\t"; 
+	cout << "Starrt point:\t\t"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
 	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
-	cout << endl;
-	cout << "Apex Point:\t"; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << round(PD_apex[j]);
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_apex[PP_N - 1];
 	cout << endl;
 	cout << "-------------------------------------------" << endl;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PP_N; j++) {
 		parameterOutP->x[j] = parameterIn.x[j];
 	}
 	if (parameterIn.i > 0) {
-		for (int j = 0; j < PP_N; j++) 
-			PD_A[parameterIn.i][j] = -parameterIn.a[j];
-		PD_b[parameterIn.i] = -parameterIn.b;
+		for (int j = 0; j < PP_N; j++)
+			PD_A[parameterIn.i][j] = parameterIn.a[j];
+		PD_b[parameterIn.i] = parameterIn.b;
 	}
 }
 
-// 0. Apex Pseudo-pojection  ==========================================================
+// 0. Start
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob) {
-	cout << "------------------ 0. Apex Pseudo-pojection. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
+	cout << "------------------ 0. Start. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << parameter.x[j];
@@ -477,21 +503,33 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if(PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
 	cout << endl;
 	cout << "PD_direction:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if(PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_direction[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_direction[PP_N - 1];
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 };
 
-// 2. ...
+// 2. Movement iside Polytope
 void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob)
 {
-	// not used
+	cout << "------------------ 2. Movement inside Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
+	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	cout << "PD_basePoint:";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+		cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	cout << endl;
+	cout << "PD_direction:";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+		cout << setw(PP_SETW) << PD_direction[j];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_direction[PP_N - 1];
+	cout << endl;
+	cout << "Sift Length = " << PD_shiftLength << endl;
 }
 
 
@@ -501,7 +539,7 @@ void PC_bsf_IterOutput_3(PT_bsf_reduceElem_T_3* reduceResult, int reduceCounter,
 	// not used
 }
 
-// 0. Apex Pseudo-pojection
+// 0. Start
 void PC_bsf_ProblemOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter, double t) {
 	ProblemOutput(t);
 }
@@ -511,7 +549,7 @@ void PC_bsf_ProblemOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCount
 	ProblemOutput(t);
 }
 
-// 2. Point Pseudo-projection
+// 2. Movement inside Polytope
 void PC_bsf_ProblemOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,double t) {
 	ProblemOutput(t);
 }
@@ -554,18 +592,18 @@ inline double Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_ZERO
+inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_IN
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
 }
 
-inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point exactly belongs to the Half-space 
+inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point belongs to the Halfspace
 	return Vector_DotProductSquare(a, point) <= b;
 }
 
-inline bool PointInPolytope_s(PT_vector_T point) { // If the point belongs to the Polytope with prescigion of PP_EPS_ZERO
+inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the polytope
 	for (int i = 0; i < PD_m; i++)
-		if (Vector_DotProductSquare(point, PD_A[i]) > PD_b[i] + PP_EPS_ZERO)
+		if (!PointInHalfspace_s(x, PD_A[i], PD_b[i]))
 			return false;
 	return true;
 }
@@ -682,14 +720,13 @@ inline double ObjectiveF(PT_vector_T x) {
 	return s;
 }
 
-static bool SaveSolution(PT_vector_T x, string solutionFile) {
+static bool SaveSolution(PT_vector_T x, const char* filename) {
 	FILE* stream;
 
-	const char* file = solutionFile.c_str();
-	stream = fopen(file, "w");
+	stream = fopen(filename, "w");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << solutionFile << "'.\n";
+			cout << "Failure of opening file '" << filename << "'.\n";
 		return false;
 	}
 
@@ -723,18 +760,6 @@ Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vec
 	return true;
 }
 
-inline void ProblemOutput(double elapsedTime) {
-	cout << "=============================================" << endl;
-	cout << "Elapsed time: " << elapsedTime << endl;
-	cout << "Iterations: " << BSF_sv_iterCounter << endl;
-	if (SaveSolution(PD_basePoint, PD_solutionFile))
-		cout << "Solution is saved into the file '" << PD_solutionFile << "'." << endl;
-	cout << "Solution: ";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
-	cout << endl;
-}
-
 inline PT_float_T Distance(PT_vector_T x, PT_vector_T y) {
 	PT_vector_T z;
 	Vector_Subtraction(x, y, z);
@@ -744,4 +769,17 @@ inline PT_float_T Distance(PT_vector_T x, PT_vector_T y) {
 inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculating Objective Unit Vector
 	double c_norm = sqrt(Vector_NormSquare(PD_c));
 	Vector_DivideByNumber(PD_c, c_norm, objectiveUnitVector);
+}
+
+inline void ProblemOutput(double elapsedTime) {
+	cout << "=============================================" << endl;
+	cout << "Elapsed time: " << elapsedTime << endl;
+	cout << "Iterations: " << BSF_sv_iterCounter << endl;
+	const char* solutionFile = PD_solutionFile.c_str();
+	if (SaveSolution(PD_basePoint, solutionFile))
+		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
+	cout << "Solution: ";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	cout << endl;
 }
