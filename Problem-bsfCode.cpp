@@ -13,63 +13,37 @@ This source code has been produced with using BSF-skeleton
 using namespace std;
 
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
-	for (int j = 0; j < PP_N; j++) // Generating initial approximation
+	for (int j = 0; j < PD_n; j++) // Generating initial approximation
 		parameter->x[j] = PD_basePoint[j];
 };
 
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
-	PD_m = PP_M;
 	
-	// ------------- Load LPP data -------------------
-	PD_lppFile = PP_PATH;
-	PD_lppFile += PP_LPP_FILE;
-	const char* lppFile = PD_lppFile.c_str();
+#ifdef MTX_FORMAT
+	* success = LoadMatrixFormat();
+#else
+	* success = LoadLppFormat();
+#endif
 
-	FILE* stream;
-	float buf; 	int m, n;
-	stream = fopen(lppFile, "r");
-	
-	if (stream == NULL) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Failure of opening file '" << lppFile << "'.\n";
-		*success = false; 
+	if (*success == false)
 		return;
-	}
-
-	if (fscanf(stream, "%d%d", &m, &n) == 0) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; 
-		*success = false; 
-		return; 
-	}
-
-	if (n != PP_N || m != PP_M) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Error in input data '" << lppFile << "': PP_N != n and/or PP_M != m (PP_N = "
-			<< PP_N << ", n = " << n << "; PP_M = " << PP_M << ", m = " << m << ").\n";
-		*success = false; 
-		return;
-	}
-
-	for (int i = 0; i < PP_M; i++) {
-		for (int j = 0; j < PP_N; j++) {
-			if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
-			PD_A[i][j] = buf;
-		}
-		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
-		PD_b[i] = buf;
-	}
-
-	for (int j = 0; j < PP_N; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; *success = false; return; };
-		PD_c[j] = buf;
-	}
-	fclose(stream);
 
 	PD_solutionFile = PP_PATH;
 	PD_solutionFile += PP_SOLUTION_FILE;
 
+	//
+	//
+	//
+	//
+	//
+	//
+	//
 	// Generating Coordinates of starting point
-	for (int j = 0; j < PP_N; j++)
-		PD_basePoint[j] = (double)PP_SF / 2;
+	for (int j = 0; j < PD_n; j++)
+		PD_basePoint[j] = 0;
+
+	//
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
@@ -200,7 +174,6 @@ void PC_bsf_JobDispatcher(
 ) {
 
 
-
 	parameter->i = 0;
 
 	switch (PD_state) {
@@ -218,6 +191,12 @@ void PC_bsf_JobDispatcher(
 			// Preparations for finding a start point
 			PD_state = PP_STATE_FIND_START_POINT;
 			*job = PP_JOB_PSEUDOPOJECTION;
+#ifdef PP_DEBUG
+			cout << "--------- Pseudoprojecting ------------\n";
+#ifdef PP_PAUSE
+			system("pause");
+#endif
+#endif
 		}
 		break;
 	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
@@ -230,9 +209,10 @@ void PC_bsf_JobDispatcher(
 			}
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
-			for (int j = 0; j < PP_N; j++)
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
-			//cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG
 			Vector_Copy(parameter->x, PD_basePoint);
@@ -247,31 +227,43 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-#ifdef PP_DEBUG
-		cout << "-----------------------------------\n";
-#endif // PP_DEBUG
 
 		// Preparations for determining direction
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+#ifdef PP_DEBUG
+		cout << "--------- Determine Direction ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif
+#endif
 		PD_numDetDir = 0;
 		break;
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
 			return;
 
+		for (int j = 0; j < PD_n; j++) {
+			if (fabs(PD_basePoint[j]) < PP_EPS_ZERO)
+				PD_basePoint[j] = 0;
+			if (fabs(parameter->x[j]) < PP_EPS_ZERO)
+				parameter->x[j] = 0;
+		}
+
 #ifdef PP_DEBUG
 		cout << "\t\t\tu = ";
-		for (int j = 0; j < PP_N; j++)
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << PD_basePoint[j];
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
 		cout << endl;/**/
 		cout << "\t\t\tw = ";
-		for (int j = 0; j < PP_N; j++)
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[j];
-		//cout << "\tF(w) = " << ObjectiveF(parameter->x);
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+		cout << "\tF(w) = " << ObjectiveF(parameter->x);
 		cout << endl;/**/
 #endif // PP_DEBUG
 
@@ -315,16 +307,15 @@ void PC_bsf_JobDispatcher(
 		}
 #ifdef PP_DEBUG //--------------------------------------//
 		cout << "\t\t\tD = ";							//
-		for (int j = 0; j < PP_N; j++)					//
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)					//
 			cout << setw(PP_SETW) << PD_direction[j];	//
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << endl;									//
-		//system("pause");								//
-		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
 #ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-		PD_newInequations = false;
-		for (int j = 0; j < PP_N - 1; j++) {
+		PD_newInequalities = false;
+		for (int j = 0; j < PD_n - 1; j++) {
 			if (PD_direction[j] > 0)
 				break;
 			if (PD_direction[j] == 0)
@@ -334,10 +325,10 @@ void PC_bsf_JobDispatcher(
 			parameter->a[j] = -1;
 			parameter->b = -PD_basePoint[j];
 			PD_m++;
-			PD_newInequations = true;
+			PD_newInequalities = true;
 			break;
 		}
-		if (PD_newInequations) {
+		if (PD_newInequalities) {
 			Vector_Copy(PD_basePoint, parameter->x);
 			Vector_PlusEquals(parameter->x, PD_objectiveVector);
 			return;
@@ -347,6 +338,12 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
+#ifdef PP_DEBUG
+		cout << "--------- Movement on surface ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif
+#endif
 		break;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
@@ -359,8 +356,9 @@ void PC_bsf_JobDispatcher(
 			}
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
-			for (int j = 0; j < PP_N; j++)
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG /**/
@@ -380,22 +378,28 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
+#ifdef PP_DEBUG
+		cout << "--------- Landing ------------\n";
+#endif // PP_DEBUG
 		break;
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-
+		//
 
 		// Preparations for determining direction
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 
-#ifdef PP_DEBUG
-		cout << "-----------------------------------\n";
-#endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+#ifdef PP_DEBUG
+		cout << "--------- Determining direction ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif
+#endif
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
@@ -409,14 +413,24 @@ void PC_bsf_JobDispatcher(
 		if (PointInPolytope_s(parameter->x)) {
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+#ifdef PP_DEBUG
+			cout << "--------- Moving inside polytope ------------\n";
+#endif // PP_DEBUG
 		}
 		else {
+			//
 			// Preparations for determining direction
 			Vector_Copy(PD_basePoint, parameter->x);
 			Vector_PlusEquals(parameter->x, PD_objectiveVector);
 			*job = PP_JOB_PSEUDOPOJECTION;
 			PD_state = PP_STATE_DETERMINE_DIRECTION;
 			PD_numDetDir = 0;
+#ifdef PP_DEBUG
+			cout << "--------- Determining direction ------------\n";
+#ifdef PP_PAUSE
+			system("pause");
+#endif
+#endif
 		}
 		break;
 	default://------------------------------------- default -----------------------------------
@@ -426,24 +440,28 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
-	cout << "=================================================== Target ====================================================" << endl;
+	cout << "=================================================== BSF Target ====================================================" << endl;
+	cout << "Problem name: " << PP_MTX_PROBLEM_NAME << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
+
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
 	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
 #else
 	cout << "Number of Threads: " << omp_get_num_procs() << endl;
-#endif // PP_BSF_NUM_THREADS
+#endif 
 #else
 	cout << "OpenMP is turned off!" << endl;
-#endif // PP_BSF_OMP
+#endif 
+
 #ifdef PP_BSF_FRAGMENTED_MAP_LIST
 	cout << "Map List is Fragmented." << endl;
 #else
 	cout << "Map List is not Fragmented." << endl;
-#endif // PP_BSF_NUM_THREADS
-	cout << "Dimension: N = " << PP_N << endl;
-	cout << "Number of Constraints: M = " << PP_M << endl;
+#endif
+
+	cout << "Dimension: N = " << PD_n << endl;
+	cout << "Number of Constraints: M = " << PD_m << endl;
 	cout << "Scale Factor: SF = " << PP_SF << endl;
 	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
@@ -454,30 +472,31 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix PD_A & Column PD_b -------" << endl;
-	for (int i = 0; i < PP_M; i++) {
+	for (int i = 0; i < PD_m; i++) {
 		cout << i << ")";
-		for (int j = 0; j < PP_N; j++)
+		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_A[i][j];
 		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	}
 #endif // PP_MATRIX_OUTPUT
 
 	cout << "Objective Function:\t"; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_c[j];
-	cout << (PP_OUTPUT_LIMIT < PP_N ? "	..." : "") << endl;
-	cout << "Starrt point:\t\t"; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_c[j];
+	cout << (PP_OUTPUT_LIMIT < PD_n ? "	..." : "") << endl;
+	cout << "Starting point:\t\t"; 
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PD_n) 
+		cout << "	...";
 	cout << endl;
 	cout << "-------------------------------------------" << endl;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		parameterOutP->x[j] = parameterIn.x[j];
 	}
 	if (parameterIn.i > 0) {
-		for (int j = 0; j < PP_N; j++)
+		for (int j = 0; j < PD_n; j++)
 			PD_A[parameterIn.i][j] = parameterIn.a[j];
 		PD_b[parameterIn.i] = parameterIn.b;
 	}
@@ -489,8 +508,8 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 	cout << "------------------ 0. Start. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << parameter.x[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << parameter.x[PP_N - 1];
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << parameter.x[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 }
 
@@ -501,14 +520,14 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 	cout << "------------------ 1. Movement on Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "PD_basePoint:";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "PD_direction:";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_direction[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 };
@@ -520,14 +539,14 @@ void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter,
 	cout << "------------------ 2. Movement inside Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "PD_basePoint:";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "PD_direction:";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++)
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_direction[PP_N - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 }
@@ -570,23 +589,23 @@ void PC_bsfAssignParameter(PT_bsf_parameter_T parameter) { PC_bsf_CopyParameter(
 void PC_bsfAssignSublistLength(int value) { BSF_sv_sublistLength = value; };
 
 //---------------------------------- Problem functions -------------------------
-inline double Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
-	double sum = 0;
-	for (int j = 0; j < PP_N; j++)
+inline PT_float_T Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
+	PT_float_T sum = 0;
+	for (int j = 0; j < PD_n; j++)
 		sum += x[j] * y[j];
 	return sum;
 }
 
 inline void Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T relaxationVector) {
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		relaxationVector[j] = sumOfProjections[j] / (double)numberOfProjections;
 	}
 }
 
-inline double Vector_NormSquare(PT_vector_T x) { 
-	double sum = 0;
+inline PT_float_T Vector_NormSquare(PT_vector_T x) {
+	PT_float_T sum = 0;
 
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		sum += x[j] * x[j];
 	}
 	return sum;
@@ -609,14 +628,14 @@ inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the po
 }
 
 inline void Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint) {
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		endPoint[j] = basePoint[j] + direction[j] * siftLength;
 	}
 }
 
 // Calculating unit vector of direction from startPoint to endPoint
 inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T unitVector) {
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		unitVector[j] = endPoint[j] - startPoint[j];
 	}
 	double normOfUnitVector = sqrt(Vector_NormSquare(unitVector));
@@ -627,11 +646,11 @@ inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector
 	if (normOfUnitVector < PP_EPS_DIR)
 		return false;
 
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		unitVector[j] /= normOfUnitVector;
 	}
 
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		if (fabs(unitVector[j]) < PP_EPS_ZERO)
 			unitVector[j] = 0;
 	}
@@ -640,43 +659,43 @@ inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector
 }
 
 inline void Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint) { // toPoint = fromPoint
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		toPoint[j] = fromPoint[j];
 	}
 }
 
 inline void Vector_PlusEquals(PT_vector_T equalVector, PT_vector_T plusVector) { // equalVector += plusVector
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		equalVector[j] += plusVector[j];
 	}
 }
 
 inline void Vector_MinusEquals(PT_vector_T equalPoint, PT_vector_T minusVector) { // equalPoint += minusVector
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		equalPoint[j] -= minusVector[j];
 	}
 };
 
 inline void Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x + y
-	for (int j = 0; j < PP_N; j++) {
+	for (int j = 0; j < PD_n; j++) {
 		z[j] = x[j] + y[j];
 	}
 }
 
 inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x - y
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		z[j] = x[j] - y[j];
 	}
 }
 
 inline void Vector_MultiplyByNumber(PT_vector_T x, double r, PT_vector_T y) {  // y = r*x
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		y[j] = x[j] * r;
 	}
 }
 
 inline void Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y) {  // x = x/r
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		y[j] = x[j] / r;
 	}
 }
@@ -687,7 +706,7 @@ inline void Vector_Round(PT_vector_T x) {
 	double sign;
 	double absValue;
 
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		if (fabs(x[j]) < PP_EPS_ZERO) {
 			x[j] = 0;
 			continue;
@@ -708,16 +727,304 @@ inline void Vector_Round(PT_vector_T x) {
 // Calculating unit vector
 inline void Vector_Unit(PT_vector_T vector, PT_vector_T unitVector) {
 	double normOfVector = sqrt(Vector_NormSquare(vector));
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		unitVector[j] = unitVector[j] / normOfVector;
 	}
 };
 
-inline double ObjectiveF(PT_vector_T x) {
-	double s = 0;
-	for (int j = 0; j < PP_N; j++)
+inline PT_float_T ObjectiveF(PT_vector_T x) {
+	PT_float_T s = 0;
+	for (int j = 0; j < PD_n; j++)
 		s += PD_c[j] * x[j];
 	return s;
+}
+
+static bool LoadLppFormat() {
+	PD_lppFile = PP_PATH;
+	PD_lppFile += PP_LPP_FILE;
+	const char* lppFile = PD_lppFile.c_str();
+
+	FILE* stream;
+	float buf;
+	stream = fopen(lppFile, "r");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
+			cout << "Failure of opening file '" << lppFile << "'.\n";
+		return false;
+	}
+
+	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
+			cout << "Unexpected end of file" << endl;
+		return false;
+	}
+
+	if (PD_n > PP_N || PD_m > PP_MM) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
+			cout << "Error in input data '" << lppFile << "': PD_n > PP_N and/or PD_m > PP_MM (PD_n = "
+			<< PD_n << ", PP_N = " << PP_N << "; PD_m = " << PD_m << ", PP_MM = " << PP_MM << ").\n";
+		return false;
+	}
+
+	for (int i = 0; i < PD_m; i++) {
+		for (int j = 0; j < PD_n; j++) {
+			if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
+			PD_A[i][j] = buf;
+		}
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
+		PD_b[i] = buf;
+	}
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
+		PD_c[j] = buf;
+	}
+	
+	fclose(stream);
+	return true;
+}
+
+static bool LoadMatrixFormat() {
+	int nor, // Number of matrix rows
+		noc, // Number of matrix columns
+		non; // Number of non-zero elements
+	int m_cur;	// Current number of inequalities
+	int noe;	// Number of equations
+	const char* mtxFile;
+	FILE* stream;// Input stream
+	float buf;
+
+	//--------------- Reading A ------------------
+	PD_MTX_File_A = PP_PATH;
+	PD_MTX_File_A += PP_MTX_PREFIX;
+	PD_MTX_File_A += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_A += PP_MTX_POSTFIX_A;
+	mtxFile = PD_MTX_File_A.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d%d", &nor, &noc, &non) < 3) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Unexpected end of file" << endl;
+		return false;
+	}
+	m_cur = noe = nor;
+	PD_n = noc;
+	PD_m = 2 * nor + noc;
+
+	if (PD_n > PP_N) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
+		return false;
+	}
+
+	if (PD_m > PP_MM) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Invalid input data: number of inequalities m = " << PD_m << " must be < " << PP_MM + 1 << "\n";
+		return false;
+	}
+
+	for (int k = 0; k < non; k++) {
+		int i, j;
+
+		if (fscanf(stream, "%d%d%f", &i, &j, &buf) < 3) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+			return false;
+		}
+
+		i -= 1;
+		j -= 1;
+		if (i < 0) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Negative row index in'" << mtxFile << "'.\n" << endl;
+			return false;
+		}
+		if (j < 0) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Negative column index in'" << mtxFile << "'.\n" << endl;	
+			return false; 
+		}
+		PD_A[i][j] = buf;
+		PD_A[i + m_cur][j] = -buf;
+	}
+
+	m_cur += nor;
+
+	fclose(stream);
+
+	//--------------- Reading b ------------------
+	PD_MTX_File_b = PP_PATH;
+	PD_MTX_File_b += PP_MTX_PREFIX;
+	PD_MTX_File_b += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_b += PP_MTX_POSTFIX_B;
+	mtxFile = PD_MTX_File_b.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (noe != nor) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
+
+	for (int i = 0; i < noe; i++) {
+		if (fscanf(stream, "%f", &buf) < 1) { 
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+			return false;
+		}
+		PD_b[i] = buf;
+		PD_b[i + noe] = -buf;
+	}
+	fclose(stream);
+
+	//--------------- Reading lo ------------------
+	PD_MTX_File_lo = PP_PATH;
+	PD_MTX_File_lo += PP_MTX_PREFIX;
+	PD_MTX_File_lo += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_lo += PP_MTX_POSTFIX_LO;
+	mtxFile = PD_MTX_File_lo.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 1) { 
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+			return false; }
+		if (buf != 0) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Non-zero lower bound in'" << mtxFile << "'.\n"; 
+			return false; }
+		PD_A[m_cur + j][j] = -1;
+	}
+	fclose(stream);
+
+	//--------------- Reading hi ------------------
+	char s[6];
+	PD_MTX_File_hi = PP_PATH;
+	PD_MTX_File_hi += PP_MTX_PREFIX;
+	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_hi += PP_MTX_POSTFIX_HI;
+	mtxFile = PD_MTX_File_hi.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%s", s) < 1) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+			return false; }
+		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected higher bound in'" << mtxFile << "'.\n"; 
+			return false;
+		}
+	}
+	fclose(stream);
+
+	//--------------- Reading c ------------------
+	PD_MTX_File_c = PP_PATH;
+	PD_MTX_File_c += PP_MTX_PREFIX;
+	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_c += PP_MTX_POSTFIX_C;
+	mtxFile = PD_MTX_File_c.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
+
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 0) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout << "Unexpected end of file" << endl; 
+			return false; }
+		PD_c[j] = -buf;
+	}
+
+	fclose(stream);
+	return true;
 }
 
 static bool SaveSolution(PT_vector_T x, const char* filename) {
@@ -730,9 +1037,9 @@ static bool SaveSolution(PT_vector_T x, const char* filename) {
 		return false;
 	}
 
-	fprintf(stream, "%d\n", PP_N);
+	fprintf(stream, "%d\n", PD_n);
 
-	for (int j = 0; j < PP_N; j++)
+	for (int j = 0; j < PD_n; j++)
 		fprintf(stream, "%f\t", x[j]);
 
 	fclose(stream);
@@ -753,7 +1060,7 @@ Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vec
 	if (factor > PP_EPS_ZERO)
 		return false;
 
-	for (int j = 0; j < PP_N; j++) { 
+	for (int j = 0; j < PD_n; j++) { 
 		projection[j] = factor * a[j];
 	}
 
@@ -775,11 +1082,28 @@ inline void ProblemOutput(double elapsedTime) {
 	cout << "=============================================" << endl;
 	cout << "Elapsed time: " << elapsedTime << endl;
 	cout << "Iterations: " << BSF_sv_iterCounter << endl;
+	//cout << "Optimal objective value: " << setprecision(PP_SETW) << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
+	cout << "Optimal objective value: " << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
+	cout << "=============================================" << endl;
+	//
 	const char* solutionFile = PD_solutionFile.c_str();
 	if (SaveSolution(PD_basePoint, solutionFile))
 		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
 	cout << "Solution: ";
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PP_N); j++) cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PP_N) cout << "	..." << setw(PP_SETW) << PD_basePoint[PP_N - 1];
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 }
+
+inline void SkipComments(FILE* stream) {
+	fpos_t pos;	// Position in the input stream
+	int res;
+	res = fscanf(stream, "\n");
+	fgetpos(stream, &pos);
+	while (getc(stream) == '%') {
+		while (getc(stream) != 10);
+		res = fscanf(stream, "\n");
+		fgetpos(stream, &pos);
+	};
+	fsetpos(stream, &pos);
+};

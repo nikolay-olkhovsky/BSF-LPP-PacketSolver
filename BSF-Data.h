@@ -3,7 +3,7 @@ Project: LiFe
 Theme: Apex Method
 Module: BSF-Data.h (Problem Independent Variables & Data Structures)
 Prefix: BD
-Author: Leonid B. Sokolinsky !
+Author: Leonid B. Sokolinsky
 This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky/BSF-skeleton)
 ==============================================================================*/
 #include "BSF-Include.h"			// Problem Independent "Include" Files

@@ -14,5 +14,5 @@ This source code has been produced with using BSF-skeleton
 #define PP_BSF_TRACE_COUNT 500000	// Each PP_BSF_TRACE_COUNT-th iteration to be outputted
 #define PP_BSF_MAX_JOB_CASE 2
 //--------------------------- OpenMP Parameters ---------------------------
-#define PP_BSF_OMP				// If PP_BSF_OMP is defined then OpenMP is turned on for Map Step
-//#define PP_BSF_NUM_THREADS 6	// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used
+//#define PP_BSF_OMP				// If PP_BSF_OMP is defined then OpenMP is turned on for Map Step
+#define PP_BSF_NUM_THREADS 6	// If PP_BSF_NUM_THREADS is udefined then all accessable threads are used

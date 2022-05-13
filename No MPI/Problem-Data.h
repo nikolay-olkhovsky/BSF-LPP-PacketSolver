@@ -47,3 +47,41 @@ x_1 x_2 ... x_n
 
 static string PD_traceFile;
 FILE* PD_traceStream;
+
+//========================== Matrix format ====================================
+// nor - number of rows; noc - number of columns; non - number of non-zero values
+static string PD_MTX_File_A; /* File of matrix A (only non-zero elements):
+------------ begin of file -------------
+nor noc non // nor=m (number of inequalities); noc=n (dimension); non - number of non-zero values
+i_1 j_1 A_{{i_1}{j_1}} // i_1 - index of row; j_1 - index of column
+...
+i_k j_k A_{{i_k}{j_k}}
+------------ end of file----------------*/
+static string PD_MTX_File_b; /* File of column b:
+------------ begin of file -------------
+nor noc // nor=m (number of inequalities); noc=1
+b_1 
+...
+b_{nor}
+------------ end of file----------------*/
+static string PD_MTX_File_lo; /* File of variable lower bounds:
+------------ begin of file -------------
+nor noc // nor=n (dimension); noc=1
+lo_1
+...
+lo_{nor}
+------------ end of file----------------*/
+static string PD_MTX_File_hi; /* File of variable higher bounds:
+------------ begin of file -------------
+nor noc // nor=n (dimension); noc=1
+lo_1
+...
+lo_{nor}
+------------ end of file----------------*/
+static string PD_MTX_File_c; /* File of variable higher bounds:
+------------ begin of file -------------
+nor noc // nor=n (dimension); noc=1
+c_1
+...
+c_{nor}
+------------ end of file----------------*/

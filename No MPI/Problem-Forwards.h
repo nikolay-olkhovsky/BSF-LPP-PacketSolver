@@ -10,6 +10,8 @@ This source code has been produced with using BSF-skeleton
 //====================== Problem Functions ===========================
 PT_float_T	Distance(PT_vector_T x, PT_vector_T y);
 bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T unitVector);
+bool		LoadLppFormat();
+bool		LoadMatrixFormat();
 PT_float_T	ObjectiveF(PT_vector_T x);
 void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
@@ -18,6 +20,7 @@ bool		PointInPolytope_s(PT_vector_T x);
 void		ProblemOutput(double elapsedTime);
 bool		SaveSolution(PT_vector_T x, const char* filename);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
+void		SkipComments(FILE* stream);
 void		RndPoint(PT_vector_T point, PT_float_T maxValue);
 PT_float_T	RndPositiveValue(PT_float_T rndMax);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);

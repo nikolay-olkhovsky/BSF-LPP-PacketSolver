@@ -12,26 +12,6 @@ This source code has been produced with using BSF-skeleton
 #include "BSF-SkeletonVariables.h"	// Skeleton Variables
 using namespace std;
 
-void PC_bsf_MainArguments(int argc, char* argv[]) {
-	PD_lppFile = PP_PATH;
-	PD_lppFile += PP_LPP_FILE;
-	PD_solutionFile = PP_PATH;
-	PD_solutionFile += PP_SOLUTION_FILE;
-	PD_traceFile = PP_PATH;
-	PD_traceFile += PP_TRACE_FILE;
-
-	if (argc > 1) {
-		PD_lppFile = argv[1];
-		if (argc > 2) {
-			PD_solutionFile = argv[2];
-			if (argc > 2) 
-				PD_traceFile = argv[3];
-		}
-	}
-	else
-		return;
-}
-
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PD_n; j++) // Generating initial approximation
 		parameter->x[j] = PD_basePoint[j];
@@ -39,68 +19,20 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
-	
-	// ------------- Load LPP data -------------------
-	const char* lppFile = PD_lppFile.c_str();
 
-	FILE* stream;
-	float buf;
-	stream = fopen(lppFile, "r");
-	
-	if (stream == NULL) {
-		cout << "Failure of opening file '" << lppFile << "'.\n";
-		*success = false; system("pause");
+#ifdef MTX_FORMAT
+	* success = LoadMatrixFormat();
+#else
+	* success = LoadLppFormat();
+#endif // MTX_FORMAT
+
+	if (*success == false)
 		return;
-	}
-
-	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) { 
-		cout << "Unexpected end of file" << endl; 
-		*success = false; 
-		return; 
-	}
-	
-	if (PD_n > PP_MAX_N) {
-		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_MAX_N + 1 << "\n";
-		*success = false;
-		system("pause");
-		return;
-	}
-
-	if (PD_n >= PD_m_init) {
-		cout << "Invalid input data: Space dimension n = " << PD_n 
-			<< " must be less then number of inequalities m = " << PD_m_init << "\n";
-		*success = false;
-		system("pause");
-		return;
-	}
-
-	for (int i = 0; i < PD_m_init; i++) {
-		for (int j = 0; j < PD_n; j++) {
-			if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
-			PD_A[i][j] = buf;
-		}
-		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
-		PD_b[i] = buf;
-	}
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; *success = false; return; }
-		PD_c[j] = buf;
-	}
-
-	if (PD_c[0] != (PT_float_T)PD_n * PP_RHO) {
-		cout << "Invalid input data!\n";
-		*success = false;
-		system("pause");
-		return;
-	}
-
-	fclose(stream);
 
 	// Open trace file
 	const char* traceFile = PD_traceFile.c_str();
 	PD_traceStream = fopen(traceFile, "w");
-	if (stream == NULL) {
+	if (PD_traceStream == NULL) {
 		cout << "Failure of opening file '" << PD_traceFile << "'.\n";
 		*success = false;
 		system("pause");
@@ -108,23 +40,10 @@ void PC_bsf_Init(bool* success) {
 	}
 
 	// Generating Coordinates of starting point
-	srand((unsigned)time(NULL));
-	RndPoint(PD_basePoint, (PT_float_T)PP_MAX_START_POINT_COORD);/**/
-	/*for (int j = 0; j < PD_n; j++)
-		PD_basePoint[j] = (double)PP_SF / 2;/**/
-	/*PD_basePoint[0] = 45.293;
-	PD_basePoint[1] = 175.02;
-	PD_basePoint[2] = 17.4829;/**/
-
-#ifdef PP_DEBUG
-	PD_m = PD_m_init;
-	cout << "Starting base point = ";
 	for (int j = 0; j < PD_n; j++)
-		cout << setw(PP_SETW) << PD_basePoint[j];
-	cout << "\tIn = " << (PointInPolytope_s(PD_basePoint)? "Yes\n" : "No\n") << endl;
-#endif // PP_DEBUG /**/
+		PD_basePoint[j] = 0;
 
-	PD_m = PP_MAX_M;
+	PD_m = PP_MM;
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
@@ -273,6 +192,12 @@ void PC_bsf_JobDispatcher(
 			// Preparations for finding a start point
 			PD_state = PP_STATE_FIND_START_POINT;
 			*job = PP_JOB_PSEUDOPOJECTION;
+#ifdef PP_DEBUG
+			cout << "--------- Pseudoprojecting ------------\n";
+#ifdef PP_PAUSE
+			system("pause");
+#endif // PP_PAUSE
+#endif // PP_DEBUG
 		}
 		break;
 	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
@@ -285,9 +210,10 @@ void PC_bsf_JobDispatcher(
 			}
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
-			for (int j = 0; j < PD_n; j++)
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
-			//cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG
 			Vector_Copy(parameter->x, PD_basePoint);
@@ -302,30 +228,42 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 		WriteTrace(parameter->x);
-#ifdef PP_DEBUG
-		cout << "-----------------------------------\n";
-#endif // PP_DEBUG
 
 		// Preparations for determining direction
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+#ifdef PP_DEBUG
+		cout << "--------- Determine Direction ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif // PP_PAUSE
+#endif // PP_DEBUG
 		PD_numDetDir = 0;
 		break;
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
 			return;
 
+		for (int j = 0; j < PD_n; j++) {
+			if (fabs(PD_basePoint[j]) < PP_EPS_ZERO)
+				PD_basePoint[j] = 0;
+			if (fabs(parameter->x[j]) < PP_EPS_ZERO)
+				parameter->x[j] = 0;
+		}
+
 #ifdef PP_DEBUG
 		cout << "\t\t\tu = ";
-		for (int j = 0; j < PD_n; j++)
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << PD_basePoint[j];
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
 		cout << endl;/**/
 		cout << "\t\t\tw = ";
-		for (int j = 0; j < PD_n; j++)
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[j];
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << "\tF(w) = " << ObjectiveF(parameter->x);
 		cout << endl;/**/
 #endif // PP_DEBUG
@@ -370,11 +308,10 @@ void PC_bsf_JobDispatcher(
 		}
 #ifdef PP_DEBUG //--------------------------------------//
 		cout << "\t\t\tD = ";							//
-		for (int j = 0; j < PD_n; j++)					//
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)					//
 			cout << setw(PP_SETW) << PD_direction[j];	//
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << endl;									//
-		//system("pause");								//
-		cout << "-----------------------------------\n";//
 #endif // PP_DEBUG -------------------------------------//
 
 #ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
@@ -402,6 +339,12 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
+#ifdef PP_DEBUG
+		cout << "--------- Movement on surface ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif // PP_PAUSE
+#endif // PP_DEBUG
 		break;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
@@ -414,8 +357,9 @@ void PC_bsf_JobDispatcher(
 			}
 #ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
-			for (int j = 0; j < PD_n; j++)
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG /**/
@@ -435,6 +379,9 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
+#ifdef PP_DEBUG
+		cout << "--------- Landing ------------\n";
+#endif // PP_DEBUG
 		break;
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
@@ -446,11 +393,14 @@ void PC_bsf_JobDispatcher(
 		// Preparations for determining direction
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 
-#ifdef PP_DEBUG
-		cout << "-----------------------------------\n";
-#endif // PP_DEBUG
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+#ifdef PP_DEBUG
+		cout << "--------- Determining direction ------------\n";
+#ifdef PP_PAUSE
+		system("pause");
+#endif // PP_PAUSE
+#endif // PP_DEBUG
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
@@ -464,6 +414,9 @@ void PC_bsf_JobDispatcher(
 		if (PointInPolytope_s(parameter->x)) {
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+#ifdef PP_DEBUG
+			cout << "--------- Moving inside polytope ------------\n";
+#endif // PP_DEBUG
 		}
 		else {
 			WriteTrace(PD_basePoint);
@@ -473,6 +426,12 @@ void PC_bsf_JobDispatcher(
 			*job = PP_JOB_PSEUDOPOJECTION;
 			PD_state = PP_STATE_DETERMINE_DIRECTION;
 			PD_numDetDir = 0;
+#ifdef PP_DEBUG
+			cout << "--------- Determining direction ------------\n";
+#ifdef PP_PAUSE
+			system("pause");
+#endif // PP_PAUSE
+#endif // PP_DEBUG
 		}
 		break;
 	default://------------------------------------- default -----------------------------------
@@ -482,16 +441,54 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
-	PD_m = PD_m_init;
+	cout << "=================================================== Target ====================================================" << endl;
+	//
+
+#ifdef PP_BSF_OMP
+#ifdef PP_BSF_NUM_THREADS
+	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
+#else
+	cout << "Number of Threads: " << omp_get_num_procs() << endl;
+#endif 
+#else
+	cout << "OpenMP is turned off!" << endl;
+#endif 
+
+#ifdef PP_BSF_FRAGMENTED_MAP_LIST
+	cout << "Map List is Fragmented." << endl;
+#else
+	cout << "Map List is not Fragmented." << endl;
+#endif
+
+	cout << "Dimension: N = " << PD_n << endl;
+	cout << "Number of Constraints: M = " << PD_m_init << endl;
+	cout << "Scale Factor: SF = " << PP_SF << endl;
+	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
+	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
+	cout << "Eps Zero:\t" << PP_EPS_ZERO << endl;
+	cout << "Eps Minimal Length of Direction Vector:\t" << PP_EPS_DIR << endl;
+	cout << "Length of Objective Vector: " << PP_OBJECTIVE_VECTOR_LENGTH << endl;
+	cout << "Start length of shift vector: " << PP_START_SHIFT_LENGTH << endl;
+
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix PD_A & Column PD_b -------" << endl;
-	for (int i = 0; i < PD_m; i++) {
+	for (int i = 0; i < PD_m_init; i++) {
 		cout << i << ")";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_A[i][j];
 		cout << "\t<=" << setw(PP_SETW) << PD_b[i] << endl;
 	}
 #endif // PP_MATRIX_OUTPUT
+
+	cout << "Objective Function:\t";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_c[j];
+	cout << (PP_OUTPUT_LIMIT < PD_n ? "	..." : "") << endl;
+	cout << "Starting point:\t\t";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PD_n)
+		cout << "	...";
+	cout << endl;
+	cout << "-------------------------------------------" << endl;
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
@@ -512,7 +509,7 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << parameter.x[j];
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << parameter.x[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 }
 
@@ -525,12 +522,12 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_basePoint[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "PD_direction:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_direction[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 };
@@ -544,12 +541,12 @@ void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter,
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_basePoint[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "PD_direction:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_direction[j];
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	..." << setw(PP_SETW) << PD_direction[PD_n - 1];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
 	cout << "Sift Length = " << PD_shiftLength << endl;
 }
@@ -742,6 +739,235 @@ inline double ObjectiveF(PT_vector_T x) {
 	return s;
 }
 
+static bool LoadLppFormat() {
+	//
+	//
+	const char* lppFile = PD_lppFile.c_str();
+
+	FILE* stream;
+	float buf;
+	stream = fopen(lppFile, "r");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << lppFile << "'.\n";
+		system("pause");
+		return false;
+	}
+
+	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) {
+		cout << "Unexpected end of file" << endl;
+		system("pause");
+		return false;
+	}
+
+	if (PD_n > PP_N) {
+		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
+		system("pause");
+		return false;
+	}
+
+
+	for (int i = 0; i < PD_m_init; i++) {
+		for (int j = 0; j < PD_n; j++) {
+			if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; return false; }
+			PD_A[i][j] = buf;
+		}
+		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; return false; }
+		PD_b[i] = buf;
+	}
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; return false; }
+		PD_c[j] = buf;
+	}
+
+	fclose(stream);
+	return true;
+}
+
+static bool LoadMatrixFormat() {
+	int nor, // Number of matrix rows
+		noc, // Number of matrix columns
+		non; // Number of non-zero elements
+	int m_cur;	// Current number of inequalities
+	int noe;	// Number of equations
+	const char* mtxFile;
+	FILE* stream;// Input stream
+	float buf;
+
+	//--------------- Reading A ------------------
+	PD_MTX_File_A = PP_PATH;
+	PD_MTX_File_A += PP_MTX_PREFIX;
+	PD_MTX_File_A += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_A += PP_MTX_POSTFIX_A;
+	mtxFile = PD_MTX_File_A.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << mtxFile << "'.\n";
+		//
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d%d", &nor, &noc, &non) < 3) {
+		cout << "Unexpected end of file" << endl;
+		//
+		return false;
+	}
+	m_cur = noe = nor;
+	PD_n = noc;
+	PD_m_init = 2 * nor + noc;
+
+	if (PD_n > PP_N) {
+		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
+		//
+		return false;
+	}
+
+	if (PD_m_init > PP_MM) {
+		cout << "Invalid input data: number of inequalities m = " << PD_m_init << " must be < " << PP_MM + 1 << "\n";
+		//
+		return false;
+	}
+
+	for (int k = 0; k < non; k++) {
+		int i, j; 
+
+		if (fscanf(stream, "%d%d%f", &i, &j, &buf) < 3) {
+			cout << "Unexpected end of file'" << mtxFile << "'." << endl;	return false;
+		}
+
+		i -= 1;
+		j -= 1;
+		if (i < 0) { cout << "Negative row index in'" << mtxFile << "'.\n" << endl;	return false; }
+		if (j < 0) { cout << "Negative column index in'" << mtxFile << "'.\n" << endl;	return false; }
+		PD_A[i][j] = buf;
+		PD_A[i + m_cur][j] = -buf;
+	}
+	
+	m_cur += nor;
+
+	fclose(stream);
+
+	//--------------- Reading b ------------------
+	PD_MTX_File_b = PP_PATH;
+	PD_MTX_File_b += PP_MTX_PREFIX;
+	PD_MTX_File_b += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_b += PP_MTX_POSTFIX_B;
+	mtxFile = PD_MTX_File_b.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) <2) {
+		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (noe != nor) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
+	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
+
+	for (int i = 0; i < noe; i++) {
+		if (fscanf(stream, "%f", &buf) < 1) { 
+			cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; 
+		}
+		PD_b[i] = buf;
+		PD_b[i + noe] = -buf;
+	}
+	fclose(stream);
+
+	//--------------- Reading lo ------------------
+	PD_MTX_File_lo = PP_PATH;
+	PD_MTX_File_lo += PP_MTX_PREFIX;
+	PD_MTX_File_lo += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_lo += PP_MTX_POSTFIX_LO; 
+	mtxFile = PD_MTX_File_lo.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
+	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 1) { cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; }
+		if (buf != 0) { cout << "Non-zero lower bound in'" << mtxFile << "'.\n"; return false; }
+		PD_A[m_cur + j][j] = -1;
+	}
+	fclose(stream);
+
+	//--------------- Reading hi ------------------
+	char s[6];
+	PD_MTX_File_hi = PP_PATH;
+	PD_MTX_File_hi += PP_MTX_PREFIX;
+	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_hi += PP_MTX_POSTFIX_HI;
+	mtxFile = PD_MTX_File_hi.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
+	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%s", s) < 1) { cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; }
+		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') { 
+			cout << "Unexpected higher bound in'" << mtxFile << "'.\n"; return false; 
+		}
+	}
+	fclose(stream);
+
+	//--------------- Reading c ------------------
+	PD_MTX_File_c = PP_PATH;
+	PD_MTX_File_c += PP_MTX_PREFIX;
+	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_c += PP_MTX_POSTFIX_C;
+	mtxFile = PD_MTX_File_c.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		cout << "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
+	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
+
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 0) { cout << "Unexpected end of file" << endl; return false; }
+		PD_c[j] = -buf;
+	}
+	fclose(stream);
+	return true;
+}
+
 static bool SaveSolution(PT_vector_T x, const char* filename) {
 	FILE* stream;
 
@@ -794,10 +1020,34 @@ inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculatin
 }
 
 inline void ProblemOutput(double elapsedTime) {
+	cout << "=============================================" << endl;
+	cout << "Elapsed time: " << elapsedTime << endl;
+	cout << "Iterations: " << BSF_sv_iterCounter << endl;
+	//cout << "Optimal objective value: " << setprecision(PP_SETW) << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
+	cout << "Optimal objective value: " << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
+	cout << "=============================================" << endl;
 	fclose(PD_traceStream);
 	const char* solutionFile = PD_solutionFile.c_str();
-	SaveSolution(PD_basePoint, solutionFile);
+	if (SaveSolution(PD_basePoint, solutionFile))
+		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
+	cout << "Solution: ";
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_basePoint[j];
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+	cout << endl;
 }
+
+inline void SkipComments(FILE* stream) {
+	fpos_t pos;	// Position in the input stream
+	int res;
+	res = fscanf(stream, "\n");
+	fgetpos(stream, &pos);
+	while (getc(stream) == '%') {
+		while (getc(stream) != 10);
+		res = fscanf(stream, "\n");
+		fgetpos(stream, &pos);
+	};
+	fsetpos(stream, &pos);
+};
 
 inline PT_float_T RndPositiveValue(PT_float_T rndMax) {
 	return (((PT_float_T)rand() / ((PT_float_T)RAND_MAX + 1)) * rndMax);
@@ -812,4 +1062,24 @@ inline void WriteTrace(PT_vector_T x) {
 	for (int j = 0; j < PD_n; j++)
 		fprintf(PD_traceStream, "%f\t", x[j]);
 	fprintf(PD_traceStream, "\n");
+}
+
+void PC_bsf_MainArguments(int argc, char* argv[]) {
+
+	if (argc > 1) {
+		PD_lppFile = argv[1];
+		if (argc > 2) {
+			PD_solutionFile = argv[2];
+			if (argc > 2)
+				PD_traceFile = argv[3];
+		}
+	}
+	else {
+		PD_lppFile = PP_PATH;
+		PD_lppFile += PP_LPP_FILE;
+		PD_solutionFile = PP_PATH;
+		PD_solutionFile += PP_SOLUTION_FILE;
+		PD_traceFile = PP_PATH;
+		PD_traceFile += PP_TRACE_FILE;
+	}
 }
