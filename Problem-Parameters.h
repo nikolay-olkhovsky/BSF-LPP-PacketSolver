@@ -12,29 +12,28 @@ This source code has been produced with using BSF-skeleton
 //#define PP_PAUSE
 //#define PP_MAJOR_COORDINATES_CAN_NOT_DECREASE			// straightens the trace, but can lead to a incorrect solution
 //=========================== Problem Parameters =========================
-//#define PP_MTX_PROBLEM_NAME		"simple"
-//#define PP_M 8		// simple							// Maximal number of inequalities
-//#define PP_N 7		// simple							// Maximal Space Dimension
-
-#define PP_MTX_PROBLEM_NAME		"afiro"
-#define PP_M 27		// afiro							// Maximal number of inequalities
-#define PP_N 51		// afiro							// Maximal Space Dimension
-
-//#define PP_MTX_PROBLEM_NAME		"adlittle"
-//#define PP_M 56		// adlittle							// Maximal number of inequalities
-//#define PP_N 138		// adlittle							// Maximal Space Dimension
-//--------------------------------------
-
 #ifdef MTX_FORMAT
-#define PP_MM (2*PP_M+PP_N)	// Maximal Total number of inequalities
-#else
-#define PP_MM PP_M			// Maximal Total number of inequalities
-#endif
+#define PP_MTX_PROBLEM_NAME		"simple"
+#define PP_M 8		// Number of equations (number of rows in *.mtx)
+#define PP_N 7		// Number of variables (number of cols in *.mtx)
 
-#ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-#define PP_MAX_MM (PP_M + PP_N - 1)	// Maximal number of inequalities including additional
+//#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
+//#define PP_M 27		// Number of equations (number of rows in *.mtx)
+//#define PP_N 51		// Number of variables (number of cols in *.mtx)
+
+//#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
+//#define PP_M 56		// Number of equations (number of rows in *.mtx)
+//#define PP_N 138		// Number of variables (number of cols in *.mtx)
+#define PP_MM (2*PP_M+PP_N)	// Maximal number of inequalities
 #else
-#define PP_MAX_MM PP_MM			// Maximal number of inequalities including additional
+#define PP_MTX_PROBLEM_NAME		"lpp"
+#define PP_M 7		// Number of inequalities
+#define PP_N 3		// Space dimension
+#ifdef  PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
+#define PP_MM (PP_M + PP_N - 1)	// Maximal number of inequalities including additional
+#else
+#define PP_MM PP_M			// Maximal number of inequalities including additional
+#endif
 #endif
 
 //--------------------------------------
@@ -58,9 +57,9 @@ This source code has been produced with using BSF-skeleton
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 //#define PP_MATRIX_OUTPUT	// To output Matrix
-#define PP_SETW 14
+#define PP_SETW 12
 #define PP_PATH "C:/TEMP/"
-//#define PP_PATH ""
+//#define PP_PATH "Problems/"
 #define PP_SOLUTION_FILE "solution.txt"
 
 //------------------------- LPP format ----------------

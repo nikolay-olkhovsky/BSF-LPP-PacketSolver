@@ -19,12 +19,11 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
-
 #ifdef MTX_FORMAT
 	* success = LoadMatrixFormat();
 #else
 	* success = LoadLppFormat();
-#endif // MTX_FORMAT
+#endif
 
 	if (*success == false)
 		return;
@@ -42,8 +41,8 @@ void PC_bsf_Init(bool* success) {
 	// Generating Coordinates of starting point
 	for (int j = 0; j < PD_n; j++)
 		PD_basePoint[j] = 0;
-
-	PD_m = PP_MM;
+	
+	PD_basePoint[PD_n - 1] = 200;
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
@@ -51,7 +50,7 @@ void PC_bsf_Init(bool* success) {
 }
 
 void PC_bsf_SetListSize(int* listSize) {
-	*listSize = PD_m;
+	*listSize = PP_MM;
 }
 
 void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
@@ -442,6 +441,7 @@ void PC_bsf_JobDispatcher(
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== Target ====================================================" << endl;
+	cout << "Problem name: " << PP_MTX_PROBLEM_NAME << endl;
 	//
 
 #ifdef PP_BSF_OMP
@@ -461,7 +461,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 #endif
 
 	cout << "Dimension: N = " << PD_n << endl;
-	cout << "Number of Constraints: M = " << PD_m_init << endl;
+	cout << "Number of Constraints: M = " << PD_m << endl;
 	cout << "Scale Factor: SF = " << PP_SF << endl;
 	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
@@ -472,7 +472,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix PD_A & Column PD_b -------" << endl;
-	for (int i = 0; i < PD_m_init; i++) {
+	for (int i = 0; i < PD_m; i++) {
 		cout << i << ")";
 		for (int j = 0; j < PD_n; j++)
 			cout << setw(PP_SETW) << PD_A[i][j];
@@ -754,20 +754,26 @@ static bool LoadLppFormat() {
 		return false;
 	}
 
-	if (fscanf(stream, "%d%d", &PD_m_init, &PD_n) == 0) {
+	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) {
 		cout << "Unexpected end of file" << endl;
 		system("pause");
 		return false;
 	}
 
 	if (PD_n > PP_N) {
-		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
+		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < PP_N + 1" << PP_N + 1 << "\n";
+		system("pause");
+		return false;
+	}
+
+	if (PD_n > PP_N) {
+		cout << "Invalid input data: Number of inequalities m = " << PD_m << " must be < PP_MM + 1" << PP_MM + 1 << "\n";
 		system("pause");
 		return false;
 	}
 
 
-	for (int i = 0; i < PD_m_init; i++) {
+	for (int i = 0; i < PD_m; i++) {
 		for (int j = 0; j < PD_n; j++) {
 			if (fscanf(stream, "%f", &buf) == 0) { cout << "Unexpected end of file" << endl; return false; }
 			PD_A[i][j] = buf;
@@ -786,11 +792,10 @@ static bool LoadLppFormat() {
 }
 
 static bool LoadMatrixFormat() {
-	int nor, // Number of matrix rows
-		noc, // Number of matrix columns
-		non; // Number of non-zero elements
-	int m_cur;	// Current number of inequalities
-	int noe;	// Number of equations
+	int nor,	// Number of matrix rows
+		noc,	// Number of matrix columns
+		non,	// Number of non-zero elements
+		noe;	// Number of equations
 	const char* mtxFile;
 	FILE* stream;// Input stream
 	float buf;
@@ -815,9 +820,16 @@ static bool LoadMatrixFormat() {
 		//
 		return false;
 	}
-	m_cur = noe = nor;
+
+	if (nor >= noc) {
+		//
+		cout 
+			<< "Number of rows m = " << PD_n << " must be < " << "Number of columns n = " << noc << "\n";
+		return false;
+	}
+
+	PD_m = noe = nor;
 	PD_n = noc;
-	PD_m_init = 2 * nor + noc;
 
 	if (PD_n > PP_N) {
 		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
@@ -825,9 +837,11 @@ static bool LoadMatrixFormat() {
 		return false;
 	}
 
-	if (PD_m_init > PP_MM) {
-		cout << "Invalid input data: number of inequalities m = " << PD_m_init << " must be < " << PP_MM + 1 << "\n";
-		//
+	if (2 * nor + noc > PP_MM) {
+
+		cout 
+			<< "Invalid input data: number of inequalities m = " << 2 * nor + noc 
+			<< " must be < PP_MM + 1 =" << PP_MM + 1 << "\n";
 		return false;
 	}
 
@@ -835,18 +849,31 @@ static bool LoadMatrixFormat() {
 		int i, j; 
 
 		if (fscanf(stream, "%d%d%f", &i, &j, &buf) < 3) {
-			cout << "Unexpected end of file'" << mtxFile << "'." << endl;	return false;
+			
+			cout 
+				<< "Unexpected end of file'" << mtxFile << "'." << endl;
+			return false;
 		}
 
 		i -= 1;
 		j -= 1;
-		if (i < 0) { cout << "Negative row index in'" << mtxFile << "'.\n" << endl;	return false; }
-		if (j < 0) { cout << "Negative column index in'" << mtxFile << "'.\n" << endl;	return false; }
+		if (i < 0) { 
+
+			cout 
+				<< "Negative row index in'" << mtxFile << "'.\n" << endl;	
+			return false; 
+		}
+		if (j < 0) { 
+
+			cout 
+				<< "Negative column index in'" << mtxFile << "'.\n" << endl;
+			return false; 
+		}
 		PD_A[i][j] = buf;
-		PD_A[i + m_cur][j] = -buf;
+		//PD_A[i + noe][j] = -buf;
 	}
 	
-	m_cur += nor;
+	//PD_m += nor;
 
 	fclose(stream);
 
@@ -859,82 +886,39 @@ static bool LoadMatrixFormat() {
 	stream = fopen(mtxFile, "r+b");
 
 	if (stream == NULL) {
-		cout << "Failure of opening file '" << mtxFile << "'.\n";
+
+		cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d", &nor, &noc) <2) {
-		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+
+		cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
-	if (noe != nor) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
-	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
+	if (noe != nor) { 
+
+		cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) { 
+		
+		cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
 
 	for (int i = 0; i < noe; i++) {
 		if (fscanf(stream, "%f", &buf) < 1) { 
-			cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; 
+
+			cout 
+				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
+			return false; 
 		}
 		PD_b[i] = buf;
-		PD_b[i + noe] = -buf;
-	}
-	fclose(stream);
-
-	//--------------- Reading lo ------------------
-	PD_MTX_File_lo = PP_PATH;
-	PD_MTX_File_lo += PP_MTX_PREFIX;
-	PD_MTX_File_lo += PP_MTX_PROBLEM_NAME;
-	PD_MTX_File_lo += PP_MTX_POSTFIX_LO; 
-	mtxFile = PD_MTX_File_lo.c_str();
-	stream = fopen(mtxFile, "r+b");
-
-	if (stream == NULL) {
-		cout << "Failure of opening file '" << mtxFile << "'.\n";
-		return false;
-	}
-
-	SkipComments(stream);
-	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
-		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
-		return false;
-	}
-	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
-	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) < 1) { cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; }
-		if (buf != 0) { cout << "Non-zero lower bound in'" << mtxFile << "'.\n"; return false; }
-		PD_A[m_cur + j][j] = -1;
-	}
-	fclose(stream);
-
-	//--------------- Reading hi ------------------
-	char s[6];
-	PD_MTX_File_hi = PP_PATH;
-	PD_MTX_File_hi += PP_MTX_PREFIX;
-	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
-	PD_MTX_File_hi += PP_MTX_POSTFIX_HI;
-	mtxFile = PD_MTX_File_hi.c_str();
-	stream = fopen(mtxFile, "r+b");
-
-	if (stream == NULL) {
-		cout << "Failure of opening file '" << mtxFile << "'.\n";
-		return false;
-	}
-
-	SkipComments(stream);
-	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
-		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
-		return false;
-	}
-	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
-	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%s", s) < 1) { cout << "Unexpected end of file '" << mtxFile << "'." << endl; return false; }
-		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') { 
-			cout << "Unexpected higher bound in'" << mtxFile << "'.\n"; return false; 
-		}
+		//PD_b[i + noe] = -buf;
 	}
 	fclose(stream);
 
@@ -947,26 +931,192 @@ static bool LoadMatrixFormat() {
 	stream = fopen(mtxFile, "r+b");
 
 	if (stream == NULL) {
-		cout << "Failure of opening file '" << mtxFile << "'.\n";
+
+		cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
-		cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+
+		cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
-	if (nor != PD_n) { cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; return false; }
-	if (noc != 1) { cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; return false; }
-
+	if (nor != PD_n) { 
+		
+		cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; 
+	}
+	if (noc != 1) { 
+		
+		cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; 
+	}
 
 	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) < 0) { cout << "Unexpected end of file" << endl; return false; }
+		if (fscanf(stream, "%f", &buf) < 0) { 
+			
+			cout 
+				<< "Unexpected end of file" << endl; 
+			return false; 
+		}
 		PD_c[j] = -buf;
 	}
 	fclose(stream);
+
+	//--------------- Reading lo ------------------
+	PD_MTX_File_lo = PP_PATH;
+	PD_MTX_File_lo += PP_MTX_PREFIX;
+	PD_MTX_File_lo += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_lo += PP_MTX_POSTFIX_LO;
+	mtxFile = PD_MTX_File_lo.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+
+		cout
+			<< "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+
+		cout
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+
+		cout
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n";
+		return false;
+	}
+	if (noc != 1) {
+
+		cout
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n";
+		return false;
+	}
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 1) {
+
+			cout
+				<< "Unexpected end of file '" << mtxFile << "'." << endl;
+			return false;
+		}
+		if (buf != 0) {
+
+			cout
+				<< "Non-zero lower bound in'" << mtxFile << "'.\n";
+			return false;
+		}
+		//PD_A[PD_m + j][j] = -1;
+	}
+
+	//PD_m += PD_n;
+
+	fclose(stream);
+
+	//--------------- Reading hi ------------------
+	char s[6];
+	PD_MTX_File_hi = PP_PATH;
+	PD_MTX_File_hi += PP_MTX_PREFIX;
+	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_hi += PP_MTX_POSTFIX_HI;
+	mtxFile = PD_MTX_File_hi.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		
+		cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+
+		cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) { 
+		
+		cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+		return false; }
+	if (noc != 1) { 
+		
+		cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+		return false; }
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%s", s) < 1) { 
+			
+			cout 
+				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
+			return false; }
+		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') { 
+
+			cout 
+				<< "Unexpected higher bound in'" << mtxFile << "'.\n"; 
+			return false; 
+		}
+	}
+	fclose(stream);
+
+	//--------------- Transformation to inequalities -----------------
+	bool iA[PP_M]; // Flag: Condition is inequality
+
+	for (int jc = 0; jc < PD_n; jc++) {
+		if (PD_c != 0) continue;
+		bool found = false; // Flag: Free variable has been found
+		for (int i = 0; i < PD_m; i++) {
+			if (PD_A[i][jc] == 0) continue;
+			if (found == true) {
+				//
+				cout
+					<< "Two conditions have the same free variable." << endl;
+				return false;
+			}
+			if (PD_A[i][jc] != 1) {
+				//
+				cout
+					<< "Coefficient of free variable is not equal to 1." << endl;
+				return false;
+			}
+			found = true;
+		}
+		if (found == false) {
+			//
+			cout
+				<< "Condition corresponding to free variable was not found." << endl;
+			return false;
+		}
+
+	}
+
+
 	return true;
 }
+
+/*static void Pack(int noe, int noc) {
+	bool iA[PP_M], 
+		iLo[PP_N];
+	for (int jc = 0; jc < PD_n; jc++) {
+		if (PD_c != 0) continue;
+		for (int i = 0; i < PD_m; i++) {
+
+		}
+	}
+}*/
 
 static bool SaveSolution(PT_vector_T x, const char* filename) {
 	FILE* stream;

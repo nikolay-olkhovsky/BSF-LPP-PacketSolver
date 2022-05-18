@@ -38,12 +38,11 @@ void PC_bsf_Init(bool* success) {
 	//
 	//
 	//
-	//
 	// Generating Coordinates of starting point
 	for (int j = 0; j < PD_n; j++)
 		PD_basePoint[j] = 0;
 
-	//
+	PD_basePoint[PD_n - 1] = 200;
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
@@ -506,11 +505,11 @@ void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* pa
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob) {
 	cout << "------------------ 0. Start. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
-	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	/* debug */ cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << parameter.x[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-	cout << endl;
+	cout << "\tF(x) = " << ObjectiveF(parameter.x) << endl;
 }
 
 // 1. Movement on Polytope
@@ -786,11 +785,10 @@ static bool LoadLppFormat() {
 }
 
 static bool LoadMatrixFormat() {
-	int nor, // Number of matrix rows
-		noc, // Number of matrix columns
-		non; // Number of non-zero elements
-	int m_cur;	// Current number of inequalities
-	int noe;	// Number of equations
+	int nor,	// Number of matrix rows
+		noc,	// Number of matrix columns
+		non,	// Number of non-zero elements
+		noe;	// Number of equations
 	const char* mtxFile;
 	FILE* stream;// Input stream
 	float buf;
@@ -815,9 +813,8 @@ static bool LoadMatrixFormat() {
 			cout << "Unexpected end of file" << endl;
 		return false;
 	}
-	m_cur = noe = nor;
+	PD_m = noe = nor;
 	PD_n = noc;
-	PD_m = 2 * nor + noc;
 
 	if (PD_n > PP_N) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
@@ -825,9 +822,11 @@ static bool LoadMatrixFormat() {
 		return false;
 	}
 
-	if (PD_m > PP_MM) {
+	if (2 * nor + noc > PP_MM) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Invalid input data: number of inequalities m = " << PD_m << " must be < " << PP_MM + 1 << "\n";
+			cout 
+			<< "Invalid input data: number of inequalities m = " << 2 * nor + noc 
+			<< " must be < PP_MM + 1 =" << PP_MM + 1 << "\n";
 		return false;
 	}
 
@@ -836,7 +835,8 @@ static bool LoadMatrixFormat() {
 
 		if (fscanf(stream, "%d%d%f", &i, &j, &buf) < 3) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+				cout 
+				<< "Unexpected end of file'" << mtxFile << "'." << endl;
 			return false;
 		}
 
@@ -844,19 +844,21 @@ static bool LoadMatrixFormat() {
 		j -= 1;
 		if (i < 0) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Negative row index in'" << mtxFile << "'.\n" << endl;
+				cout 
+				<< "Negative row index in'" << mtxFile << "'.\n" << endl;
 			return false;
 		}
 		if (j < 0) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Negative column index in'" << mtxFile << "'.\n" << endl;	
+				cout 
+				<< "Negative column index in'" << mtxFile << "'.\n" << endl;	
 			return false; 
 		}
 		PD_A[i][j] = buf;
-		PD_A[i + m_cur][j] = -buf;
+		PD_A[i + noe][j] = -buf;
 	}
 
-	m_cur += nor;
+	PD_m += nor;
 
 	fclose(stream);
 
@@ -870,29 +872,34 @@ static bool LoadMatrixFormat() {
 
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << mtxFile << "'.\n";
+			cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+			cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
 	if (noe != nor) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
 		return false; }
 	if (noc != 1) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
 		return false; }
 
 	for (int i = 0; i < noe; i++) {
 		if (fscanf(stream, "%f", &buf) < 1) { 
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+				cout 
+				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
 			return false;
 		}
 		PD_b[i] = buf;
@@ -910,35 +917,90 @@ static bool LoadMatrixFormat() {
 
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << mtxFile << "'.\n";
+			cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+			cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
 	if (nor != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
 		return false; }
 	if (noc != 1) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
 		return false; }
 
 	for (int j = 0; j < PD_n; j++) {
 		if (fscanf(stream, "%f", &buf) < 1) { 
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+				cout 
+				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
 			return false; }
 		if (buf != 0) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Non-zero lower bound in'" << mtxFile << "'.\n"; 
+				cout 
+				<< "Non-zero lower bound in'" << mtxFile << "'.\n"; 
 			return false; }
-		PD_A[m_cur + j][j] = -1;
+		PD_A[PD_m + j][j] = -1;
+	}
+
+	PD_m += PD_n;
+
+	fclose(stream);
+
+	//--------------- Reading c ------------------
+	PD_MTX_File_c = PP_PATH;
+	PD_MTX_File_c += PP_MTX_PREFIX;
+	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_c += PP_MTX_POSTFIX_C;
+	mtxFile = PD_MTX_File_c.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n";
+		return false;
+	}
+	if (noc != 1) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n";
+		return false;
+	}
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 0) {
+			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+				cout 
+				<< "Unexpected end of file" << endl;
+			return false;
+		}
+		PD_c[j] = -buf;
 	}
 	fclose(stream);
 
@@ -953,76 +1015,42 @@ static bool LoadMatrixFormat() {
 
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << mtxFile << "'.\n";
+			cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
+			cout 
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
 	if (nor != PD_n) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
 		return false; }
 	if (noc != 1) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
+			cout 
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
 		return false; }
 
 	for (int j = 0; j < PD_n; j++) {
 		if (fscanf(stream, "%s", s) < 1) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected end of file '" << mtxFile << "'." << endl; 
+				cout 
+				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
 			return false; }
 		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected higher bound in'" << mtxFile << "'.\n"; 
+				cout 
+				<< "Unexpected higher bound in'" << mtxFile << "'.\n"; 
 			return false;
 		}
 	}
-	fclose(stream);
-
-	//--------------- Reading c ------------------
-	PD_MTX_File_c = PP_PATH;
-	PD_MTX_File_c += PP_MTX_PREFIX;
-	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
-	PD_MTX_File_c += PP_MTX_POSTFIX_C;
-	mtxFile = PD_MTX_File_c.c_str();
-	stream = fopen(mtxFile, "r+b");
-
-	if (stream == NULL) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << mtxFile << "'.\n";
-		return false;
-	}
-
-	SkipComments(stream);
-	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Unexpected end of file'" << mtxFile << "'." << endl;
-		return false;
-	}
-	if (nor != PD_n) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of rows in'" << mtxFile << "'.\n"; 
-		return false; }
-	if (noc != 1) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
-		return false; }
-
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) < 0) {
-			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout << "Unexpected end of file" << endl; 
-			return false; }
-		PD_c[j] = -buf;
-	}
-
 	fclose(stream);
 	return true;
 }
