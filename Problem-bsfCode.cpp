@@ -803,16 +803,26 @@ static bool LoadMatrixFormat() {
 
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Failure of opening file '" << mtxFile << "'.\n";
+			cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d%d", &nor, &noc, &non) < 3) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout << "Unexpected end of file" << endl;
+			cout 
+			<< "Unexpected end of file" << endl;
 		return false;
 	}
+
+	if (nor >= noc) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Number of rows m = " << PD_n << " must be < " << "Number of columns n = " << noc << "\n";
+		return false;
+	}
+
 	PD_m = noe = nor;
 	PD_n = noc;
 

@@ -14,7 +14,7 @@ This source code has been produced with using BSF-skeleton
 //=========================== Problem Parameters =========================
 #ifdef MTX_FORMAT
 #define PP_MTX_PROBLEM_NAME		"simple"
-#define PP_M 8		// Number of equations (number of rows in *.mtx)
+#define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 
 //#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
