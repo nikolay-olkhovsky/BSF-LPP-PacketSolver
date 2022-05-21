@@ -19,6 +19,7 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
+
 #ifdef MTX_FORMAT
 	* success = LoadMatrixFormat();
 #else
@@ -46,7 +47,6 @@ void PC_bsf_Init(bool* success) {
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
-
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -237,8 +237,8 @@ void PC_bsf_JobDispatcher(
 		cout << "--------- Determine Direction ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
-#endif // PP_PAUSE
-#endif // PP_DEBUG
+#endif 
+#endif 
 		PD_numDetDir = 0;
 		break;
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
@@ -314,7 +314,7 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG -------------------------------------//
 
 #ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-		PD_newInequations = false;
+		PD_newInequalities = false;
 		for (int j = 0; j < PD_n - 1; j++) {
 			if (PD_direction[j] > 0)
 				break;
@@ -325,10 +325,10 @@ void PC_bsf_JobDispatcher(
 			PD_A[PD_m][j] = -1;
 			PD_b[PD_m] = -PD_basePoint[j];
 			PD_m++;
-			PD_newInequations = true;
+			PD_newInequalities = true;
 			break;
 		}
-		if (PD_newInequations) {
+		if (PD_newInequalities) {
 			Vector_Copy(PD_basePoint, parameter->x);
 			Vector_PlusEquals(parameter->x, PD_objectiveVector);
 			return;
@@ -398,8 +398,8 @@ void PC_bsf_JobDispatcher(
 		cout << "--------- Determining direction ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
-#endif // PP_PAUSE
-#endif // PP_DEBUG
+#endif 
+#endif 
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX * PP_EPS_RELAX)
@@ -506,11 +506,11 @@ void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* pa
 void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob) {
 	cout << "------------------ 0. Start. Iter # " << BSF_sv_iterCounter << " -------------------" << endl;
-	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "Approximat. :"; 
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << parameter.x[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-	cout << endl;
+	cout << "\tF(x) = " << setw(PP_SETW) << ObjectiveF(parameter.x) << endl;
 }
 
 // 1. Movement on Polytope
@@ -589,8 +589,8 @@ void PC_bsfAssignParameter(PT_bsf_parameter_T parameter) { PC_bsf_CopyParameter(
 void PC_bsfAssignSublistLength(int value) { BSF_sv_sublistLength = value; };
 
 //---------------------------------- Problem functions -------------------------
-inline double Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
-	double sum = 0;
+inline PT_float_T Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
+	PT_float_T sum = 0;
 	for (int j = 0; j < PD_n; j++) 
 		sum += x[j] * y[j];
 	return sum;
@@ -602,8 +602,8 @@ inline void Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjecti
 	}
 }
 
-inline double Vector_NormSquare(PT_vector_T x) { 
-	double sum = 0;
+inline PT_float_T Vector_NormSquare(PT_vector_T x) {
+	PT_float_T sum = 0;
 
 	for (int j = 0; j < PD_n; j++) {
 		sum += x[j] * x[j];
@@ -761,17 +761,18 @@ static bool LoadLppFormat() {
 	}
 
 	if (PD_n > PP_N) {
-		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < PP_N + 1" << PP_N + 1 << "\n";
-		system("pause");
+		
+		cout 
+			<< "Invalid input data: Space dimension n = " << PD_n << " must be < PP_N + 1" << PP_N + 1 << "\n";
 		return false;
 	}
 
-	if (PD_n > PP_N) {
-		cout << "Invalid input data: Number of inequalities m = " << PD_m << " must be < PP_MM + 1" << PP_MM + 1 << "\n";
-		system("pause");
+	if (PD_m > PP_MM) {
+
+		cout 
+			<< "Invalid input data: Number of inequalities m = " << PD_m << " must be < PP_MM + 1" << PP_MM + 1 << "\n";
 		return false;
 	}
-
 
 	for (int i = 0; i < PD_m; i++) {
 		for (int j = 0; j < PD_n; j++) {
@@ -834,8 +835,9 @@ static bool LoadMatrixFormat() {
 	PD_n = noc;
 
 	if (PD_n > PP_N) {
-		cout << "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
-		//
+
+		cout 
+			<< "Invalid input data: Space dimension n = " << PD_n << " must be < " << PP_N + 1 << "\n";
 		return false;
 	}
 
@@ -872,10 +874,7 @@ static bool LoadMatrixFormat() {
 			return false; 
 		}
 		PD_A[i][j] = buf;
-		//PD_A[i + noe][j] = -buf;
 	}
-	
-	//PD_m += nor;
 
 	fclose(stream);
 
@@ -920,55 +919,16 @@ static bool LoadMatrixFormat() {
 			return false; 
 		}
 		PD_b[i] = buf;
-		//PD_b[i + noe] = -buf;
 	}
 	fclose(stream);
 
-	//--------------- Reading c ------------------
-	PD_MTX_File_c = PP_PATH;
-	PD_MTX_File_c += PP_MTX_PREFIX;
-	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
-	PD_MTX_File_c += PP_MTX_POSTFIX_C;
-	mtxFile = PD_MTX_File_c.c_str();
-	stream = fopen(mtxFile, "r+b");
-
-	if (stream == NULL) {
-
-		cout 
-			<< "Failure of opening file '" << mtxFile << "'.\n";
-		return false;
-	}
-
-	SkipComments(stream);
-	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
-
-		cout 
-			<< "Unexpected end of file'" << mtxFile << "'." << endl;
-		return false;
-	}
-	if (nor != PD_n) { 
-		
-		cout 
-			<< "Incorrect number of rows in'" << mtxFile << "'.\n"; 
-		return false; 
-	}
-	if (noc != 1) { 
-		
-		cout 
-			<< "Incorrect number of columnws in'" << mtxFile << "'.\n"; 
-		return false; 
-	}
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) < 0) { 
-			
-			cout 
-				<< "Unexpected end of file" << endl; 
-			return false; 
-		}
-		PD_c[j] = -buf;
-	}
-	fclose(stream);
+	/*debug cout* << "------- Matrix PD_A & Column PD_b -------" << endl;
+	for (int i = 0; i < PP_M; i++) {
+		cout << i << ")";
+		for (int j = 0; j < PP_N; j++)
+			cout << PD_A[i][j] << "\t";
+		cout << "=" << setw(PP_SETW) << PD_b[i] << endl;
+	}/*debug*/
 
 	//--------------- Reading lo ------------------
 	PD_MTX_File_lo = PP_PATH;
@@ -1018,11 +978,54 @@ static bool LoadMatrixFormat() {
 				<< "Non-zero lower bound in'" << mtxFile << "'.\n";
 			return false;
 		}
-		//PD_A[PD_m + j][j] = -1;
 	}
 
-	//PD_m += PD_n;
+	fclose(stream);
 
+	//--------------- Reading c ------------------
+	PD_MTX_File_c = PP_PATH;
+	PD_MTX_File_c += PP_MTX_PREFIX;
+	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_c += PP_MTX_POSTFIX_C;
+	mtxFile = PD_MTX_File_c.c_str();
+	stream = fopen(mtxFile, "r+b");
+
+	if (stream == NULL) {
+
+		cout
+			<< "Failure of opening file '" << mtxFile << "'.\n";
+		return false;
+	}
+
+	SkipComments(stream);
+	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
+
+		cout
+			<< "Unexpected end of file'" << mtxFile << "'." << endl;
+		return false;
+	}
+	if (nor != PD_n) {
+
+		cout
+			<< "Incorrect number of rows in'" << mtxFile << "'.\n";
+		return false;
+	}
+	if (noc != 1) {
+
+		cout
+			<< "Incorrect number of columnws in'" << mtxFile << "'.\n";
+		return false;
+	}
+
+	for (int j = 0; j < PD_n; j++) {
+		if (fscanf(stream, "%f", &buf) < 0) {
+
+			cout
+				<< "Unexpected end of file" << endl;
+			return false;
+		}
+		PD_c[j] = -buf;
+	}
 	fclose(stream);
 
 	//--------------- Reading hi ------------------
@@ -1079,24 +1082,60 @@ static bool LoadMatrixFormat() {
 static bool Conversion() { // Transformation to inequalities & dimensionality reduction
 	static PT_float_T iA[PP_M]; // Free variable coefficients
 	static bool Flag[PP_N];		// Flags of free variables to delete
+	bool single;
 
 	for (int jc = 0; jc < PD_n; jc++) { // Detecting free variables
 		if (PD_c[jc] != 0) continue;
 		for (int i = 0; i < PD_m; i++) { // Find corresponding equation
 			if (PD_A[i][jc] == 0) continue;
-			bool foundDouble = false; // Flag: second occurrence of free variable is found
-			for (int ii = 0; ii < PD_m; ii++) { // Looking for double
-				if (PD_A[ii][jc] == 0) continue;
-				if (ii != i) {
-					foundDouble = true;
+			single = true;
+			for (int ii = i + 1; ii < PD_m; ii++)   
+				if (PD_A[ii][jc] != 0) {
+					single = false;
+					break;
+				}
+			if (!single) break;
+			for (int j = jc + 1; j < PD_n; j++) {
+				if (PD_A[i][j] != 0 && PD_c[jc] == 0) {
+					single = false;
 					break;
 				}
 			}
-			if (foundDouble) continue;
+			if (!single) break;
 			Flag[jc] = true;
 			iA[i] = PD_A[i][jc];
-			break;
+			PD_A[i][jc] = 0;
+			/*debug*
+			cout << "------- Matrix PD_A & Column PD_b -------" << endl;
+			for (int i = 0; i < PP_M; i++) {
+				for (int j = 0; j < PP_N; j++)
+					cout << setw(PP_SETW) << PD_A[i][j];
+				cout << "\t=" << setw(PP_SETW) << PD_b[i] << endl;
+			}
+			cout << "----------------------------------------" << endl;
+			/*debug*/
 		}
+	}
+
+	for (int i = 0; i < PD_m; i++) { // Removing null equations
+		PT_float_T s;
+		s = 0;
+		for (int j = 0; j < PD_n; j++) 
+			s += abs(PD_A[i][j]);
+		if (s > PP_EPS_ZERO) continue;
+		if (PD_b[i] != 0) {
+
+			cout
+				<< "Inconsistent equation " << i << ": 0 = " << PD_b[i] << endl;
+			return false;
+		}
+		for (int ii = i; ii < PD_m - 1; ii++) {  // Remove null equation
+			for (int j = 0; j < PD_n; j++)
+				PD_A[ii][j] = PD_A[ii + 1][j];
+			iA[ii] = iA[ii + 1];
+			PD_b[ii] = PD_b[ii + 1];
+		}
+		PD_m--;
 	}
 
 	for (int jc = 0; jc < PD_n; jc++) { // Delete free variables
@@ -1110,7 +1149,7 @@ static bool Conversion() { // Transformation to inequalities & dimensionality re
 		PD_n--;
 		jc--;
 		Flag[PD_n] = false;
-		PD_c[PD_n ] = 0;
+		PD_c[PD_n] = 0;
 		for (int i = 0; i < PD_m; i++)
 			PD_A[i][PD_n] = 0;
 	}

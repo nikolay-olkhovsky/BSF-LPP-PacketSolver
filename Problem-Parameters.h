@@ -10,20 +10,30 @@ This source code has been produced with using BSF-skeleton
 #define PP_DEBUG
 #define MTX_FORMAT
 //#define PP_PAUSE
-//#define PP_MAJOR_COORDINATES_CAN_NOT_DECREASE			// straightens the trace, but can lead to a incorrect solution
+//#define PP_MAJOR_COORDINATES_CAN_NOT_DECREASE	// straightens the trace, but can lead to an incorrect solution
 //=========================== Problem Parameters =========================
 #ifdef MTX_FORMAT
-#define PP_MTX_PROBLEM_NAME		"simple"
+
+/**/#define PP_MTX_PROBLEM_NAME		"simple1"
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
-#define PP_N 7		// Number of variables (number of cols in *.mtx)
+#define PP_N 7		// Number of variables (number of cols in *.mtx)/**/
 
-//#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
-//#define PP_M 27		// Number of equations (number of rows in *.mtx)
-//#define PP_N 51		// Number of variables (number of cols in *.mtx)
+/**#define PP_MTX_PROBLEM_NAME		"simple2"
+#define PP_M 5		// Number of equations (number of rows in *.mtx)
+#define PP_N 8		// Number of variables (number of cols in *.mtx)/**/
 
-//#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
-//#define PP_M 56		// Number of equations (number of rows in *.mtx)
-//#define PP_N 138		// Number of variables (number of cols in *.mtx)
+/**#define PP_MTX_PROBLEM_NAME		"simple3"
+#define PP_M 6		// Number of equations (number of rows in *.mtx)
+#define PP_N 8		// Number of variables (number of cols in *.mtx)/**/
+
+/**#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
+#define PP_M 27		// Number of equations (number of rows in *.mtx)
+#define PP_N 51		// Number of variables (number of cols in *.mtx)/**/
+
+/**#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
+#define PP_M 56		// Number of equations (number of rows in *.mtx)
+#define PP_N 138	// Number of variables (number of cols in *.mtx)/**/
+
 #define PP_MM (2*PP_M+PP_N)	// Maximal number of inequalities
 #else
 #define PP_MTX_PROBLEM_NAME		"lpp"
@@ -37,31 +47,35 @@ This source code has been produced with using BSF-skeleton
 #endif
 
 //--------------------------------------
-#define PP_SF 200										// Scale factor
+#define PP_SF 200					// Scale factor
 
-#define PP_EPS_RELAX		1E-11						// Precision for relaxation
-#define PP_EPS_IN			1E-2						// Not too small!
-#define PP_EPS_SHIFT		1E-3
+//#define PP_EPS_RELAX		1E-11	// Precision for relaxation
+#define PP_EPS_RELAX		1E-10	// Precision for relaxation
+#define PP_EPS_IN			1E-2	// Not too small!
+//#define PP_EPS_SHIFT		1E-3
+#define PP_EPS_SHIFT		1E-4
 #define PP_EPS_ZERO			1E-8
 #define PP_EPS_DIR			1E-6
-#define PP_EPS_OBJECTIVE	1E-2
+#define PP_EPS_OBJECTIVE	1E-3
 
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH 5						// Maximal number of shifts with the same length
 
 #define PP_MAX_ITER_COUNT	1000000000						// Maximal count of iterations
 //#define PP_OBJECTIVE_VECTOR_LENGTH ((PT_float_T)PP_SF/200)	// Length of Objective Vector
-#define PP_OBJECTIVE_VECTOR_LENGTH 1
+//#define PP_OBJECTIVE_VECTOR_LENGTH 1
+#define PP_OBJECTIVE_VECTOR_LENGTH 0.1
 //#define PP_START_SHIFT_LENGTH (PP_SF/20)					// Start length of shift vector
-#define PP_START_SHIFT_LENGTH 10					// Start length of shift vector
+//#define PP_START_SHIFT_LENGTH 10					// Start length of shift vector
+#define PP_START_SHIFT_LENGTH 2					// Start length of shift vector
 
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 //#define PP_MATRIX_OUTPUT	// To output Matrix
-#define PP_SETW 12
+#define PP_SETW 16
 #define PP_PATH "C:/TEMP/"
 //#define PP_PATH "Problems/"
 #define PP_SOLUTION_FILE "solution.txt"
-
+//
 //------------------------- LPP format ----------------
 #define PP_LPP_FILE "lpp.txt"
 //------------------------- Matrix format ----------------

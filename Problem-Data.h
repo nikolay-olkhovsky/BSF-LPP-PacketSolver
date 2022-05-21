@@ -9,7 +9,6 @@ This source code has been produced with using BSF-skeleton
 #include "Problem-Types.h"		// Problem Parameters 
 using namespace std;
 //========================== Problem variables ====================================
-
 static int		PD_m;						// Upper bound of valuable inequalities
 static int		PD_n;						// Space dimension
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
