@@ -13,17 +13,23 @@ This source code has been produced with using BSF-skeleton
 //#define PP_MAJOR_COORDINATES_CAN_NOT_DECREASE // straightens the trace, but can lead to an incorrect solution
 //=========================== Problem Parameters =========================
 #ifdef MTX_FORMAT
-#define PP_MTX_PROBLEM_NAME		"simple"
-#define PP_M 8		// Number of equations (number of rows in *.mtx)
-#define PP_N 7		// Number of variables (number of cols in *.mtx)
 
-//#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
-//#define PP_M 27		// Number of equations (number of rows in *.mtx)
-//#define PP_N 51		// Number of variables (number of cols in *.mtx)
+/*#define PP_MTX_PROBLEM_NAME		"simple"
+#define PP_M 4		// Number of equations (number of rows in *.mtx)
+#define PP_N 7		// Number of variables (number of cols in *.mtx)/**/
+
+/*#define PP_MTX_PROBLEM_NAME		"simpleplus"
+#define PP_M 5		// Number of equations (number of rows in *.mtx)
+#define PP_N 8		// Number of variables (number of cols in *.mtx)/**/
+
+#define PP_MTX_PROBLEM_NAME		"afiro"		//  464.7531
+#define PP_M 27		// Number of equations (number of rows in *.mtx)
+#define PP_N 51		// Number of variables (number of cols in *.mtx)/**/
 
 //#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
 //#define PP_M 56		// Number of equations (number of rows in *.mtx)
-//#define PP_N 138		// Number of variables (number of cols in *.mtx)
+//#define PP_N 138		// Number of variables (number of cols in *.mtx)/**/
+
 #define PP_MM (2*PP_M+PP_N)	// Maximal number of inequalities
 #else
 #define PP_MTX_PROBLEM_NAME		"lpp"

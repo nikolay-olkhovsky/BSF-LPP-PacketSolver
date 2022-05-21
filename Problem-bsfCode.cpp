@@ -42,7 +42,7 @@ void PC_bsf_Init(bool* success) {
 	for (int j = 0; j < PD_n; j++)
 		PD_basePoint[j] = 0;
 
-	PD_basePoint[PD_n - 1] = 200;
+	//PD_basePoint[PD_n - 1] = 200;
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);

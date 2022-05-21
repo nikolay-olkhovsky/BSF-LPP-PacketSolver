@@ -42,7 +42,7 @@ void PC_bsf_Init(bool* success) {
 	for (int j = 0; j < PD_n; j++)
 		PD_basePoint[j] = 0;
 	
-	PD_basePoint[PD_n - 1] = 200;
+	//PD_basePoint[PD_n - 1] = 200;
 
 	ObjectiveUnitVector(PD_objectiveUnitVector);
 	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
@@ -809,15 +809,17 @@ static bool LoadMatrixFormat() {
 	stream = fopen(mtxFile, "r+b");
 
 	if (stream == NULL) {
-		cout << "Failure of opening file '" << mtxFile << "'.\n";
 		//
+		cout 
+			<< "Failure of opening file '" << mtxFile << "'.\n";
 		return false;
 	}
 
 	SkipComments(stream);
 	if (fscanf(stream, "%d%d%d", &nor, &noc, &non) < 3) {
-		cout << "Unexpected end of file" << endl;
 		//
+		cout 
+			<< "Unexpected end of file " << mtxFile << endl;
 		return false;
 	}
 
@@ -1071,52 +1073,75 @@ static bool LoadMatrixFormat() {
 		}
 	}
 	fclose(stream);
-
-	//--------------- Transformation to inequalities -----------------
-	bool iA[PP_M]; // Flag: Condition is inequality
-
-	for (int jc = 0; jc < PD_n; jc++) {
-		if (PD_c != 0) continue;
-		bool found = false; // Flag: Free variable has been found
-		for (int i = 0; i < PD_m; i++) {
-			if (PD_A[i][jc] == 0) continue;
-			if (found == true) {
-				//
-				cout
-					<< "Two conditions have the same free variable." << endl;
-				return false;
-			}
-			if (PD_A[i][jc] != 1) {
-				//
-				cout
-					<< "Coefficient of free variable is not equal to 1." << endl;
-				return false;
-			}
-			found = true;
-		}
-		if (found == false) {
-			//
-			cout
-				<< "Condition corresponding to free variable was not found." << endl;
-			return false;
-		}
-
-	}
-
-
-	return true;
+	return Conversion();
 }
 
-/*static void Pack(int noe, int noc) {
-	bool iA[PP_M], 
-		iLo[PP_N];
-	for (int jc = 0; jc < PD_n; jc++) {
-		if (PD_c != 0) continue;
-		for (int i = 0; i < PD_m; i++) {
+static bool Conversion() { // Transformation to inequalities & dimensionality reduction
+	static PT_float_T iA[PP_M]; // Free variable coefficients
+	static bool Flag[PP_N];		// Flags of free variables to delete
 
+	for (int jc = 0; jc < PD_n; jc++) { // Detecting free variables
+		if (PD_c[jc] != 0) continue;
+		for (int i = 0; i < PD_m; i++) { // Find corresponding equation
+			if (PD_A[i][jc] == 0) continue;
+			bool foundDouble = false; // Flag: second occurrence of free variable is found
+			for (int ii = 0; ii < PD_m; ii++) { // Looking for double
+				if (PD_A[ii][jc] == 0) continue;
+				if (ii != i) {
+					foundDouble = true;
+					break;
+				}
+			}
+			if (foundDouble) continue;
+			Flag[jc] = true;
+			iA[i] = PD_A[i][jc];
+			break;
 		}
 	}
-}*/
+
+	for (int jc = 0; jc < PD_n; jc++) { // Delete free variables
+		if (!Flag[jc]) continue;
+		for (int j = jc; j < PD_n - 1; j++) { // Delete column
+			PD_c[j] = PD_c[j + 1];
+			Flag[j] = Flag[j + 1];
+			for (int i = 0; i < PD_m; i++)
+				PD_A[i][j] = PD_A[i][j + 1];
+		}
+		PD_n--;
+		jc--;
+		Flag[PD_n] = false;
+		PD_c[PD_n ] = 0;
+		for (int i = 0; i < PD_m; i++)
+			PD_A[i][PD_n] = 0;
+	}
+
+	int m = PD_m;
+	for (int i = 0; i < m; i++) { // Conversion to inequalities
+
+		if (iA[i] == 0) { // Equation without free variable => adding inequality.
+			for (int j = 0; j < PD_n; j++)
+				PD_A[PD_m][j] = -PD_A[i][j];
+			PD_b[PD_m] = -PD_b[i];
+			PD_m++;
+		}
+		else {
+			if (iA[i] < 0) { // Free variable is negative => change sign to opposite.
+				for (int j = 0; j < PD_n; j++)
+					PD_A[i][j] = -PD_A[i][j];
+				PD_b[i] = -PD_b[i];
+			}
+		}
+	}
+
+	for (int i = 0; i < PD_n; i++) { // Adding positivity conditions for variables
+		for (int j = 0; j < PD_n; j++)
+			PD_A[i + PD_m][j] = 0;
+		PD_A[i + PD_m][i] = -1;
+		PD_b[i + PD_m] = 0;
+	}
+	PD_m += PD_n;
+	return true;
+}
 
 static bool SaveSolution(PT_vector_T x, const char* filename) {
 	FILE* stream;

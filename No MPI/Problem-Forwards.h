@@ -8,6 +8,7 @@ This source code has been produced with using BSF-skeleton
 #include "Problem-bsfTypes.h"
 #include "Problem-Types.h"
 //====================== Problem Functions ===========================
+bool		Conversion();
 PT_float_T	Distance(PT_vector_T x, PT_vector_T y);
 bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T unitVector);
 bool		LoadLppFormat();
@@ -18,11 +19,11 @@ bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInPolytope_s(PT_vector_T x);
 void		ProblemOutput(double elapsedTime);
+void		RndPoint(PT_vector_T point, PT_float_T maxValue);
+PT_float_T	RndPositiveValue(PT_float_T rndMax);
 bool		SaveSolution(PT_vector_T x, const char* filename);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
 void		SkipComments(FILE* stream);
-void		RndPoint(PT_vector_T point, PT_float_T maxValue);
-PT_float_T	RndPositiveValue(PT_float_T rndMax);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint);
 void		Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y);
