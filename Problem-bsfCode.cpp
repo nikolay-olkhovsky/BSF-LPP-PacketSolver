@@ -460,8 +460,8 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Map List is not Fragmented." << endl;
 #endif
 
-	cout << "Dimension: N = " << PD_n << endl;
-	cout << "Number of Constraints: M = " << PD_m << endl;
+	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
+	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
 	cout << "Scale Factor: SF = " << PP_SF << endl;
 	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
@@ -972,12 +972,7 @@ static bool LoadMatrixFormat() {
 				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
 			return false; 
 		}
-		if (buf != 0) {
-			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout 
-				<< "Non-zero lower bound in'" << mtxFile << "'.\n"; 
-			return false; 
-		}
+		PD_lo[j] = buf;
 	}
 
 	fclose(stream);
@@ -1029,7 +1024,6 @@ static bool LoadMatrixFormat() {
 	fclose(stream);
 
 	//--------------- Reading hi ------------------
-	char s[6];
 	PD_MTX_File_hi = PP_PATH;
 	PD_MTX_File_hi += PP_MTX_PREFIX;
 	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
@@ -1063,17 +1057,12 @@ static bool LoadMatrixFormat() {
 		return false; }
 
 	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%s", s) < 1) {
+		if (fscanf(stream, "%f", &buf) < 1) {
 			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 				cout 
 				<< "Unexpected end of file '" << mtxFile << "'." << endl; 
 			return false; }
-		if (s[0] != '1' && s[1] != 'e' && s[2] != '3' && s[3] != '0' && s[4] != '8') {
-			if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-				cout 
-				<< "Unexpected higher bound in'" << mtxFile << "'.\n"; 
-			return false;
-		}
+		PD_hi[j] = buf;
 	}
 	fclose(stream);
 	return Conversion();
@@ -1105,15 +1094,6 @@ static bool Conversion() { // Transformation to inequalities & dimensionality re
 			Flag[jc] = true;
 			iA[i] = PD_A[i][jc];
 			PD_A[i][jc] = 0;
-			/*debug*
-			cout << "------- Matrix PD_A & Column PD_b -------" << endl;
-			for (int i = 0; i < PP_M; i++) {
-				for (int j = 0; j < PP_N; j++)
-					cout << setw(PP_SETW) << PD_A[i][j];
-				cout << "\t=" << setw(PP_SETW) << PD_b[i] << endl;
-			}
-			cout << "----------------------------------------" << endl;
-			/*debug*/
 		}
 	}
 
@@ -1172,13 +1152,24 @@ static bool Conversion() { // Transformation to inequalities & dimensionality re
 		}
 	}
 
-	for (int i = 0; i < PD_n; i++) { // Adding positivity conditions for variables
+	for (int i = 0; i < PD_n; i++) { // Adding lower bound conditions
 		for (int j = 0; j < PD_n; j++)
 			PD_A[i + PD_m][j] = 0;
 		PD_A[i + PD_m][i] = -1;
-		PD_b[i + PD_m] = 0;
+		PD_b[i + PD_m] = -PD_lo[i];
 	}
 	PD_m += PD_n;
+
+	for (int i = 0; i < PD_n; i++) { // Adding higher bound conditions
+		if (PD_hi[i] != INFINITY) {
+			for (int j = 0; j < PD_n; j++)
+				PD_A[PD_m][j] = 0;
+			PD_A[PD_m][i] = 1;
+			PD_b[PD_m] = PD_hi[i];
+			PD_m++;
+		}
+	}
+
 	return true;
 }
 

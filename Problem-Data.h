@@ -23,6 +23,8 @@ static PT_column_T PD_b;					// Column of the constant terms of the system Ax <=
 static PT_vector_T PD_c;					// Objective Function Coefficients
 static PT_vector_T PD_basePoint;			// Base point on Polytope
 static PT_vector_T PD_direction;			// Unit vector to set shift direction
+static PT_vector_T PD_hi;					// Higher bound
+static PT_vector_T PD_lo;					// Lower bound
 static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
 static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
 static PT_vector_T PD_relaxationVector;
