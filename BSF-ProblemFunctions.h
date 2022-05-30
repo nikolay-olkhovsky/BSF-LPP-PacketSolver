@@ -45,8 +45,10 @@ void PC_bsf_IterOutput_3(
 void PC_bsf_JobDispatcher(
 	PT_bsf_parameter_T* parameter,
 	int* job,
-	bool* exit
+	bool* exit,
+	double t
 );
+//
 void PC_bsf_MapF(
 	PT_bsf_mapElem_T* mapElem, 
 	PT_bsf_reduceElem_T* reduceElem, 

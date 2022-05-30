@@ -27,7 +27,6 @@ int main(int argc, char* argv[]) {
 		MPI_Finalize();
 		exit(1);
 	};
-
 	BD_success = true; 
 	BC_Init(&BD_success);
 	MPI_Allreduce(&BD_success, &success, 1, MPI_UNSIGNED, MPI_LAND, MPI_COMM_WORLD);
@@ -36,12 +35,13 @@ int main(int argc, char* argv[]) {
 		MPI_Finalize();
 		exit(1);
 	};
-	
-	if (BD_rank == BD_masterRank)
-		BC_Master();
-	else 
-		BC_Worker();
 
+	if (BD_rank == BD_masterRank) {
+		BC_Master();
+	}
+	else {
+		BC_Worker();
+	}
 	MPI_Finalize();
 	return 0;
 };
@@ -52,7 +52,7 @@ static void BC_Master() {// The head function of the master process.
 
 	BD_t = -MPI_Wtime();
 	do {
-		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit);
+		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit, BD_t + MPI_Wtime());
 		if (BD_exit) break;
 		BD_jobCase = BD_newJobCase;
 		if (BD_jobCase > PP_BSF_MAX_JOB_CASE) {
@@ -62,6 +62,8 @@ static void BC_Master() {// The head function of the master process.
 		};
 		BC_MasterMap(!BD_EXIT);
 		BC_MasterReduce();
+
+
 		switch (BD_jobCase) {
 			case 0:
 			PC_bsf_ProcessResults(
@@ -286,8 +288,6 @@ static bool BC_WorkerMap() { // Performs the Map function
 			break;
 		};
 	};
-	/* Time measurement *///t_Map += MPI_Wtime();
-	/* Time measurement *///cout << "t_Map = " << t_Map << "\t";
 	return !BD_EXIT;
 };
 

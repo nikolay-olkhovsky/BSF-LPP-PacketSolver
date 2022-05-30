@@ -45,7 +45,8 @@ void PC_bsf_IterOutput_3(
 void PC_bsf_JobDispatcher(
 	PT_bsf_parameter_T* parameter,
 	int* job,
-	bool* exit
+	bool* exit,
+	double t
 );
 void PC_bsf_MainArguments(int argc, char* argv[]);
 void PC_bsf_MapF(

@@ -21,7 +21,7 @@ bool		PointInPolytope_s(PT_vector_T x);
 void		ProblemOutput(double elapsedTime);
 
 
-bool		SaveSolution(PT_vector_T x, const char* filename);
+bool		SavePoint(PT_vector_T x, const char* filename, double elapsedTime);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
 void		SkipComments(FILE* stream);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);

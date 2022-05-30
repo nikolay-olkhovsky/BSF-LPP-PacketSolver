@@ -20,11 +20,14 @@ int main(int argc, char* argv[]) {
 
 	BD_success = true;
 	PC_bsf_Init(&BD_success);
+	//
 	if (!BD_success) {
 		cout << "Error: PC_bsf_Init failed!" << endl;
 		exit(1);
 	};
 
+	//
+	//
 	BD_success = true;
 	BC_Init(&BD_success);
 	if (!BD_success) {
@@ -32,7 +35,13 @@ int main(int argc, char* argv[]) {
 		exit(1);
 	};
 
+
+
+
 	BC_Master();
+
+
+
 
 	return 0;
 };
@@ -42,7 +51,7 @@ static void BC_Master() {// The head function of the master process.
 	BD_iterCounter = 0;
 	BD_t = -(double)time(NULL);
 	do {
-		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit);
+		PC_bsf_JobDispatcher(&(BD_order.parameter), &BD_newJobCase, &BD_exit, BD_t + (double)time(NULL));
 		PC_bsf_SetListSize(&BD_listSize);
 		if (BD_exit) break;
 		BD_jobCase = BD_newJobCase;
@@ -130,6 +139,8 @@ static void BC_Master() {// The head function of the master process.
 
 	BD_t += (double)time(NULL);
 
+
+
 	switch (BD_jobCase) {
 	case 0:
 		PC_bsf_ProblemOutput(&BD_extendedReduceResult_P->elem, BD_extendedReduceResult_P->reduceCounter, BD_order.parameter, BD_t);
@@ -149,6 +160,15 @@ static void BC_Master() {// The head function of the master process.
 	};
 };
 
+
+
+
+
+
+
+
+
+
 static void BC_MasterMap(bool exit) { // Forms an order and sends it to the worker processes to perform the Map function in the current iteration.
 	PC_bsfAssignJobCase(BD_jobCase);
 	PC_bsfAssignIterCounter(BD_iterCounter);
@@ -158,9 +178,71 @@ static void BC_MasterMap(bool exit) { // Forms an order and sends it to the work
 	BD_order.iterCounter = BD_iterCounter;
 }
 
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
 static bool BC_WorkerMap() { // Performs the Map function
 	if (BD_order.exit)
 		return BD_EXIT;
+
+//
+//
+//
+//
+//
+//
+//
+//
 
 	PC_bsfAssignJobCase(BD_order.jobCase);
 	PC_bsfAssignIterCounter(BD_order.iterCounter);
@@ -177,6 +259,8 @@ static bool BC_WorkerMap() { // Performs the Map function
 #endif // PP_BSF_OMP
 	for (int i = 0; i < BD_listSize; i++) {
 
+		//
+		//
 		PC_bsfAssignNumberInSublist(i);
 		switch (BD_order.jobCase) {
 		case 0:
@@ -213,15 +297,19 @@ static void BC_WorkerReduce() {
 	case 0:
 		BC_ProcessExtendedReduceList(BD_extendedReduceList, BD_listSize, &BD_extendedReduceResult_P);
 		break;
+		//
 	case 1:
 		BC_ProcessExtendedReduceList_1(BD_extendedReduceList_1, BD_listSize, &BD_extendedReduceResult_P_1);
 		break;
+		//
 	case 2:
 		BC_ProcessExtendedReduceList_2(BD_extendedReduceList_2, BD_listSize, &BD_extendedReduceResult_P_2);
 		break;
+		//
 	case 3:
 		BC_ProcessExtendedReduceList_3(BD_extendedReduceList_3, BD_listSize, &BD_extendedReduceResult_P_3);
 		break;
+		//
 	default:
 		cout << "BC_WorkerReduce Error: Undefined job type!" << endl;
 		break;

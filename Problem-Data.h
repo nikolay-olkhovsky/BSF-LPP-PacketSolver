@@ -14,6 +14,7 @@ static int		PD_n;						// Space dimension
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequalities;
+static double	PD_ObjectiveVectorLength;	// Length of objective vector
 static bool		PD_pointIn;
 static double	PD_shiftLength;				// Shift length
 static int		PD_state;
@@ -40,14 +41,8 @@ A_m1 A_m2 ... A_mn b_m
 c_1 c_2 ... c_n
 ------------ end of file----------------*/
 
-static string PD_solutionFile; /* LPP solution file in the following format:
------------- begin of file -------------
-n
-x_1 x_2 ... x_n
------------- end of file----------------*/
-
-
-
+//
+//
 
 //========================== Matrix format ====================================
 // nor - number of rows; noc - number of columns; non - number of non-zero values
@@ -85,4 +80,14 @@ nor noc // nor=n (dimension); noc=1
 c_1
 ...
 c_{nor}
+------------ end of file----------------*/
+static string PD_MTX_File_x0;/* File of starting point in the following format:
+------------ begin of file -------------
+nor noc // nor=n (dimension); noc=1
+x_1 x_2 ... x_n
+------------ end of file----------------*/
+static string PD_MTX_File_so;/* Solution file in the following format:
+------------ begin of file -------------
+nor noc // nor=n (dimension); noc=1
+x_1 x_2 ... x_n
 ------------ end of file----------------*/
