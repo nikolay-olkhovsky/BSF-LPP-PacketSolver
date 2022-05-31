@@ -181,8 +181,24 @@ void PC_bsf_JobDispatcher(
 			// Preparations for moving inside the polytope
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
-			*job = PP_JOB_CHECK_S;
-			PD_state = PP_MOVE_INSIDE_POLYTOPE;
+			if (PointInPolytope_s(parameter->x)) {
+				*job = PP_JOB_CHECK_S;
+				PD_state = PP_MOVE_INSIDE_POLYTOPE;
+			}
+			else {
+				// Preparations for determining direction
+				Vector_Copy(PD_basePoint, parameter->x);
+				Vector_PlusEquals(parameter->x, PD_objectiveVector);
+				*job = PP_JOB_PSEUDOPOJECTION;
+				PD_state = PP_STATE_DETERMINE_DIRECTION;
+				PD_numDetDir = 0;
+#ifdef PP_DEBUG
+				cout << "--------- Determine Direction ------------\n";
+#ifdef PP_PAUSE
+				system("pause");
+#endif 
+#endif 
+			}
 		}
 		else {
 			// Preparations for finding a start point
@@ -224,20 +240,20 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 		WriteTrace(parameter->x);
-		/**/SavePoint(parameter->x, x0_File, t);/**/
+		/**SavePoint(parameter->x, x0_File, t);/**/
 
 		// Preparations for determining direction
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
+		PD_numDetDir = 0;
 #ifdef PP_DEBUG
 		cout << "--------- Determine Direction ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
 #endif 
 #endif 
-		PD_numDetDir = 0;
 		break;
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX)
@@ -411,7 +427,7 @@ void PC_bsf_JobDispatcher(
 		}
 		else {
 			WriteTrace(PD_basePoint);
-			/**/SavePoint(PD_basePoint, x0_File, t);/**/
+			/**SavePoint(PD_basePoint, x0_File, t);/**/
 			// Preparations for determining direction
 			Vector_Copy(PD_basePoint, parameter->x);
 			Vector_PlusEquals(parameter->x, PD_objectiveVector);
@@ -611,8 +627,9 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
 }
 
-inline bool PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b) { // If the point belongs to the Halfspace
-	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
+inline bool PointInHalfspace_s // If the point belongs to the Halfspace with prescigion of PP_EPS_COMPARE
+(PT_vector_T point, PT_vector_T a, PT_float_T b) { 
+	return Vector_DotProductSquare(a, point) <= b + PP_EPS_COMPARE;
 }
 
 inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the polytope

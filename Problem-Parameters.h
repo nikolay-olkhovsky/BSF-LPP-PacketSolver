@@ -7,7 +7,7 @@ Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
-//#define PP_DEBUG
+#define PP_DEBUG
 #define MTX_FORMAT
 #define PP_PATH "C:/TEMP/"
 //#define PP_PATH "Problems/"
@@ -33,7 +33,7 @@ This source code has been produced with using BSF-skeleton
 //------------------------------------------------------------------/**/
 /**/
 
-/**/#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
+/**********#define PP_MTX_PROBLEM_NAME		"adlittle"	// -225494.963
 #define PP_M 56		// Number of equations (number of rows in *.mtx)
 #define PP_N 138	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
@@ -47,7 +47,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(u)|
 #define PP_LAMBDA					1.99	// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
-#define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
+#define PP_START_SHIFT_LENGTH		0.1		// Start length of shift vector
 //------------------------------------------------------------------/**/
 /**/
 
@@ -84,14 +84,14 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(u)|
 #define PP_LAMBDA					1.99	// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	45		// Length of Objective Vector
-#define PP_START_SHIFT_LENGTH		5	// Start length of shift vector
+#define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
 /**#define PP_MTX_PROBLEM_NAME		"share2b" // -415.73
 #define PP_M 96		// Number of equations (number of rows in *.mtx)
 #define PP_N 162	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple1"
+/**/#define PP_MTX_PROBLEM_NAME		"simple1"
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
@@ -99,7 +99,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-4	// Minimal shift
 #define PP_EPS_ZERO					1E-8	// Accuracy of zero value
-#define PP_EPS_COMPARE				1E-4	// Comparison precision
+#define PP_EPS_COMPARE				1E-6	// Comparison precision
 #define PP_EPS_DIR					1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-3	// < |F(u)-F(u)|
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
@@ -129,6 +129,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 //#define PP_MATRIX_OUTPUT	// To output Matrix
 #define PP_SETW 16
+//
 //------------------------- LPP format ----------------
 #define PP_LPP_FILE "lpp.txt"
 //------------------------- Matrix format ----------------
