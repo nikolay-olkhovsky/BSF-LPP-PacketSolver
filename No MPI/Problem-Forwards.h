@@ -28,22 +28,16 @@ void		SkipComments(FILE* stream);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint);
 void		Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y);
-/*new: Inertial Motion 22.06.01*/
 void		Vector_DivideEquals(PT_vector_T x, double r);
-/*end new: Inertial Motion 22.06.01*/
 PT_float_T	Vector_DotProductSquare(PT_vector_T x, PT_vector_T y);
 void		Vector_EpsZero(PT_vector_T x);
 PT_float_T	Vector_NormSquare(PT_vector_T x);
 void		Vector_MinusEquals(PT_vector_T equalPoint, PT_vector_T minusVector);
 void		Vector_MultiplyByNumber(PT_vector_T x, double r, PT_vector_T y);
-/*new: Inertial Motion 22.06.01*/
 void		Vector_MultiplyEquals(PT_vector_T x, double r);
-/*end new: Inertial Motion 22.06.01*/
 void		Vector_PlusEquals(PT_vector_T equalVector, PT_vector_T plusVector);
 bool		Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vector_T projection);
-/*new: Inertial Motion 22.06.01*/
 void		Vector_ResetToZero(PT_vector_T x);
-/*end new: Inertial Motion 22.06.01*/
 void		Vector_Round(PT_vector_T x);
 void		Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T PD_relaxationVector);
 void		Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z);

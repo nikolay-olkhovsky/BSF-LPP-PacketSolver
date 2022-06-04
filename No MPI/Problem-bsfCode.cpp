@@ -305,9 +305,7 @@ void PC_bsf_JobDispatcher(
 			PD_ObjectiveVectorLength /= 2;
 		}
 
-		/*new: Previous base point 22.06.03*/
 		Vector_Copy(PD_basePoint, PD_previousBasePoint);
-		/*end new: Previous base point 22.06.03*/
 
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
@@ -316,16 +314,14 @@ void PC_bsf_JobDispatcher(
 			cout << "Direction is too small!\n";
 			return;
 		}
-		/*new: Inertial Motion 22.06.01*/
-		if (PP_DIR_REMEMBER_FACTOR > 0) {
+		if (PP_INERTIAL_FACTOR > 0) {
 			Vector_PlusEquals(PD_direction, PD_sumDirVector);
 
 			Vector_Copy(PD_direction, PD_sumDirVector);
-			Vector_MultiplyEquals(PD_sumDirVector, PP_DIR_REMEMBER_FACTOR);
+			Vector_MultiplyEquals(PD_sumDirVector, PP_INERTIAL_FACTOR);
 
 			Vector_Unit(PD_direction);
 		}
-		/*end new: Inertial Motion 22.06.01*/
 
 #ifdef PP_DEBUG //----------------------------------------------//
 		cout << "\t\t\tD = ";									//
@@ -410,7 +406,6 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-		/*new: Previous base point 22.06.03*/
 		PT_float_T F_prevBasePoint, F_basePoint;
 		F_prevBasePoint = ObjectiveF(PD_previousBasePoint);
 		F_basePoint = ObjectiveF(PD_basePoint);
@@ -426,14 +421,12 @@ void PC_bsf_JobDispatcher(
 			cout << "|F(u_{ i - 1 }) - F(u_i)| = " << F_prevBasePoint - F_basePoint << endl;
 #endif // PP_DEBUG /**/
 			if (F_prevBasePoint - F_basePoint < PP_DELTA_PREV_OBJ) {
-				cout << setw(PP_SETW) << "F(u_{i-1}) = " << F_prevBasePoint << " > F(u_i) = " << F_basePoint
-					<< "\t Relative error = " << fabs(F_prevBasePoint - PP_EXACT_OBJ_VALUE) / fabs(PP_EXACT_OBJ_VALUE) << endl;
+				cout << setw(PP_SETW) << "F(u_{i-1}) = " << F_prevBasePoint << " > F(u_i) = " << F_basePoint << endl;
 				*exit = true;
 				Vector_Copy(PD_previousBasePoint, PD_basePoint);
 				return;
 			}
 		}
-		/*end new: Previous base point 22.06.03*/
 
 		WriteTrace(PD_basePoint);
 		/*debug*SavePoint(PD_basePoint, x0_File, t);/*end debug*/
@@ -514,13 +507,16 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
-	cout << "Remember Fac:\t" << PP_DIR_REMEMBER_FACTOR << endl; 
-	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
-	cout << "Eps In: SF = " << PP_EPS_IN << endl;
-	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
-	cout << "Eps Zero:\t" << PP_EPS_ZERO << endl;
-	cout << "Eps Compare:\t" << PP_EPS_COMPARE << endl;
-	cout << "Eps Minimal Length of Direction Vector:\t" << PP_EPS_DIR << endl;
+	cout << "Delta Obj:\t\t" << PP_DELTA_PREV_OBJ << endl;
+	cout << "Inertial Fac:\t\t" << PP_INERTIAL_FACTOR << endl;
+	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
+	cout << "Eps In:\t\t\t" << PP_EPS_IN << endl;
+	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;
+	cout << "Eps Zero:\t\t" << PP_EPS_ZERO << endl;
+	cout << "Eps Compare:\t\t" << PP_EPS_COMPARE << endl;
+	cout << "Eps Minimal Length of Direction Vector: " << PP_EPS_DIR << endl;
+	cout << "Eps Objective:\t\t" << PP_EPS_OBJECTIVE << endl;
+	cout << "Lambda:\t\t\t" << PP_LAMBDA << endl;
 	cout << "Initial Length of Objective Vector: " << PP_OBJECTIVE_VECTOR_LENGTH << endl;
 	cout << "Start length of shift vector: " << PP_START_SHIFT_LENGTH << endl;
 
@@ -752,7 +748,6 @@ inline void Vector_MultiplyByNumber(PT_vector_T x, double r, PT_vector_T y) {  /
 		y[j] = x[j] * r;
 }
 
-/*new: Inertial Motion 22.06.01*/
 inline void Vector_MultiplyEquals(PT_vector_T x, double r) {  // x = r*x
 	for (int j = 0; j < PD_n; j++) 
 		x[j] *= r;
@@ -766,7 +761,6 @@ inline void Vector_DivideEquals(PT_vector_T x, double r) {  // x = x/r
 inline void Vector_ResetToZero(PT_vector_T x) {  // x = 0
 	for (int j = 0; j < PD_n; j++) x[j] = 0;
 }
-/*end new: Inertial Motion 22.06.01*/
 
 inline void Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y) {  // x = x/r
 	for (int j = 0; j < PD_n; j++) 
@@ -1369,11 +1363,14 @@ inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculatin
 }
 
 inline void ProblemOutput(double elapsedTime) {
+	PT_float_T F_basePoint = ObjectiveF(PD_basePoint);
 	cout << "=============================================" << endl;
 	cout << "Elapsed time: " << elapsedTime << endl;
 	cout << "Iterations: " << BSF_sv_iterCounter << endl;
 	//cout << "Optimal objective value: " << setprecision(PP_SETW) << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
 	cout << "Optimal objective value: " << setw(PP_SETW) << ObjectiveF(PD_basePoint) << endl;
+	cout << "Exact objective value: " << setw(PP_SETW) << PP_EXACT_OBJ_VALUE << endl;
+	cout << "Relative error = " << fabs(F_basePoint - PP_EXACT_OBJ_VALUE) / fabs(PP_EXACT_OBJ_VALUE) << endl;
 	cout << "=============================================" << endl;
 	fclose(PD_traceStream);
 	const char* solutionFile = PD_MTX_File_so.c_str();
