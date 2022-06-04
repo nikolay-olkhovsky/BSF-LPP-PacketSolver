@@ -175,7 +175,7 @@ void PC_bsf_JobDispatcher(
 
 	switch (PD_state) {
 	case PP_STATE_START://-------------------------- Start -----------------------------
-		if (PointInPolytope_s(PD_basePoint)) { 
+		if (PointInPolytope(PD_basePoint)) { 
 			Vector_Copy(PD_objectiveUnitVector, PD_direction);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			// Preparations for moving inside the polytope
@@ -240,7 +240,7 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 		WriteTrace(parameter->x);
-		/**SavePoint(parameter->x, x0_File, t);/**/
+		/**/SavePoint(parameter->x, x0_File, t);/**/
 
 		// Preparations for determining direction
 		Vector_Copy(parameter->x, PD_basePoint);
@@ -295,13 +295,19 @@ void PC_bsf_JobDispatcher(
 		}
 
 		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) + PP_EPS_OBJECTIVE) {
+			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " 
+				<< ObjectiveF(parameter->x) << "\t=>\tPD_ObjectiveVectorLength /= 2\n";
 			if (PD_ObjectiveVectorLength < PP_EPS_OBJECTIVE_VECTOR_LENGTH) {
 				*exit = true;
-				cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " << ObjectiveF(parameter->x) << "\n";
+				cout << "Objective Vector Length < PP_EPS_OBJECTIVE_VECTOR_LENGTH!" << endl;
 				return;
 			}
 			PD_ObjectiveVectorLength /= 2;
 		}
+
+		/*new: Previous base point 22.06.03*/
+		Vector_Copy(PD_basePoint, PD_previousBasePoint);
+		/*end new: Previous base point 22.06.03*/
 
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
@@ -310,13 +316,24 @@ void PC_bsf_JobDispatcher(
 			cout << "Direction is too small!\n";
 			return;
 		}
-#ifdef PP_DEBUG //--------------------------------------//
-		cout << "\t\t\tD = ";							//
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)					//
-			cout << setw(PP_SETW) << PD_direction[j];	//
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << endl;									//
-#endif // PP_DEBUG -------------------------------------//
+		/*new: Inertial Motion 22.06.01*/
+		if (PP_DIR_REMEMBER_FACTOR > 0) {
+			Vector_PlusEquals(PD_direction, PD_sumDirVector);
+
+			Vector_Copy(PD_direction, PD_sumDirVector);
+			Vector_MultiplyEquals(PD_sumDirVector, PP_DIR_REMEMBER_FACTOR);
+
+			Vector_Unit(PD_direction);
+		}
+		/*end new: Inertial Motion 22.06.01*/
+
+#ifdef PP_DEBUG //----------------------------------------------//
+		cout << "\t\t\tD = ";									//
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)	//
+			cout << setw(PP_SETW) << PD_direction[j];			//
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";			//
+		cout << endl;											//
+#endif // PP_DEBUG ---------------------------------------------//
 
 #ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
 		PD_newInequalities = false;
@@ -350,7 +367,6 @@ void PC_bsf_JobDispatcher(
 #endif
 #endif
 		break;
-
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
 		if (PD_pointIn) {
 			PD_numDetDir = 0;
@@ -379,7 +395,9 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
+
 		// Preparations for landing
+		//Vector_ResetToZero(PD_sumDirVector);
 		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
@@ -392,6 +410,31 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
+		/*new: Previous base point 22.06.03*/
+		PT_float_T F_prevBasePoint, F_basePoint;
+		F_prevBasePoint = ObjectiveF(PD_previousBasePoint);
+		F_basePoint = ObjectiveF(PD_basePoint);
+
+		if (F_basePoint < F_prevBasePoint) {
+#ifdef PP_DEBUG
+			cout << "u_i = ";
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+				cout << setw(PP_SETW) << PD_basePoint[j];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(t) = " << setw(PP_SETW) << F_basePoint;
+			cout << endl;
+			cout << "|F(u_{ i - 1 }) - F(u_i)| = " << F_prevBasePoint - F_basePoint << endl;
+#endif // PP_DEBUG /**/
+			if (F_prevBasePoint - F_basePoint < PP_DELTA_PREV_OBJ) {
+				cout << setw(PP_SETW) << "F(u_{i-1}) = " << F_prevBasePoint << " > F(u_i) = " << F_basePoint
+					<< "\t Relative error = " << fabs(F_prevBasePoint - PP_EXACT_OBJ_VALUE) / fabs(PP_EXACT_OBJ_VALUE) << endl;
+				*exit = true;
+				Vector_Copy(PD_previousBasePoint, PD_basePoint);
+				return;
+			}
+		}
+		/*end new: Previous base point 22.06.03*/
+
 		WriteTrace(PD_basePoint);
 		/*debug*SavePoint(PD_basePoint, x0_File, t);/*end debug*/
 
@@ -427,7 +470,7 @@ void PC_bsf_JobDispatcher(
 		}
 		else {
 			WriteTrace(PD_basePoint);
-			/**SavePoint(PD_basePoint, x0_File, t);/**/
+			/**/SavePoint(PD_basePoint, x0_File, t);/**/
 			// Preparations for determining direction
 			Vector_Copy(PD_basePoint, parameter->x);
 			Vector_PlusEquals(parameter->x, PD_objectiveVector);
@@ -471,6 +514,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
+	cout << "Remember Fac:\t" << PP_DIR_REMEMBER_FACTOR << endl; 
 	cout << "Eps Relax:\t" << PP_EPS_RELAX << endl;
 	cout << "Eps In: SF = " << PP_EPS_IN << endl;
 	cout << "Eps Shift:\t" << PP_EPS_SHIFT << endl;
@@ -528,8 +572,8 @@ void PC_bsf_IterOutput(PT_bsf_reduceElem_T* reduceResult, int reduceCounter, PT_
 void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob)
 {
-	cout << "------------------ 1. Movement on Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
-	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	/*cout << "------------------ 1. Movement on Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
+	cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
@@ -540,15 +584,15 @@ void PC_bsf_IterOutput_1(PT_bsf_reduceElem_T_1* reduceResult, int reduceCounter,
 		cout << setw(PP_SETW) << PD_direction[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
-	cout << "Sift Length = " << PD_shiftLength << endl;
+	cout << "Sift Length = " << PD_shiftLength << endl;/**/
 };
 
 // 2. Movement iside Polytope
 void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter, PT_bsf_parameter_T parameter,
 	double elapsedTime, int nextJob)
 {
-	cout << "------------------ 2. Movement inside Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
-	/* debug */// cout << "Elapsed time: " << round(elapsedTime) << endl;
+	/* cout << "------------------ 2. Movement inside Polytope. Iter # " << BSF_sv_iterCounter << " ------------------" << endl;
+	cout << "Elapsed time: " << round(elapsedTime) << endl;
 	cout << "PD_basePoint:";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 		cout << setw(PP_SETW) << PD_basePoint[j];
@@ -559,7 +603,7 @@ void PC_bsf_IterOutput_2(PT_bsf_reduceElem_T_2* reduceResult, int reduceCounter,
 		cout << setw(PP_SETW) << PD_direction[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
-	cout << "Sift Length = " << PD_shiftLength << endl;
+	cout << "Sift Length = " << PD_shiftLength << endl;/**/
 }
 
 
@@ -627,6 +671,13 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
 }
 
+inline bool PointInPolytope(PT_vector_T x) { // If the point belongs to the polytope
+	for (int i = 0; i < PD_m; i++)
+		if (!PointInHalfspace(x, PD_A[i], PD_b[i]))
+			return false;
+	return true;
+}
+
 inline bool PointInHalfspace_s // If the point belongs to the Halfspace with prescigion of PP_EPS_COMPARE
 (PT_vector_T point, PT_vector_T a, PT_float_T b) { 
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_COMPARE;
@@ -640,9 +691,8 @@ inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the po
 }
 
 inline void Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint) {
-	for (int j = 0; j < PD_n; j++) { 
+	for (int j = 0; j < PD_n; j++)  
 		endPoint[j] = basePoint[j] + direction[j] * siftLength;
-	}
 }
 
 // Calculating unit vector of direction from startPoint to endPoint
@@ -662,54 +712,65 @@ inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector
 		unitVector[j] /= normOfUnitVector;
 	}
 
-	for (int j = 0; j < PD_n; j++) { 
+	/*for (int j = 0; j < PD_n; j++) {
 		if (fabs(unitVector[j]) < PP_EPS_ZERO)
 			unitVector[j] = 0;
-	}
+	}/**/
+	
+	Vector_EpsZero(unitVector);
 
 	return true;
 }
 
 inline void Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint) { // toPoint = fromPoint
-	for (int j = 0; j < PD_n; j++) {
+	for (int j = 0; j < PD_n; j++) 
 		toPoint[j] = fromPoint[j];
-	}
 }
 
 inline void Vector_PlusEquals(PT_vector_T equalVector, PT_vector_T plusVector) { // equalVector += plusVector
-	for (int j = 0; j < PD_n; j++) {
+	for (int j = 0; j < PD_n; j++) 
 		equalVector[j] += plusVector[j];
-	}
 }
 
 inline void Vector_MinusEquals(PT_vector_T equalPoint, PT_vector_T minusVector) { // equalPoint += minusVector
-	for (int j = 0; j < PD_n; j++) { 
+	for (int j = 0; j < PD_n; j++) 
 		equalPoint[j] -= minusVector[j];
-	}
 };
 
 inline void Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x + y
-	for (int j = 0; j < PD_n; j++) {
+	for (int j = 0; j < PD_n; j++)
 		z[j] = x[j] + y[j];
-	}
 }
 
 inline void Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z) {  // z = x - y
-	for (int j = 0; j < PD_n; j++) { 
+	for (int j = 0; j < PD_n; j++)
 		z[j] = x[j] - y[j];
-	}
 }
 
 inline void Vector_MultiplyByNumber(PT_vector_T x, double r, PT_vector_T y) {  // y = r*x
-	for (int j = 0; j < PD_n; j++) { 
+	for (int j = 0; j < PD_n; j++) 
 		y[j] = x[j] * r;
-	}
 }
 
+/*new: Inertial Motion 22.06.01*/
+inline void Vector_MultiplyEquals(PT_vector_T x, double r) {  // x = r*x
+	for (int j = 0; j < PD_n; j++) 
+		x[j] *= r;
+}
+
+inline void Vector_DivideEquals(PT_vector_T x, double r) {  // x = x/r
+	for (int j = 0; j < PD_n; j++) 
+		x[j] /= r;
+}
+
+inline void Vector_ResetToZero(PT_vector_T x) {  // x = 0
+	for (int j = 0; j < PD_n; j++) x[j] = 0;
+}
+/*end new: Inertial Motion 22.06.01*/
+
 inline void Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y) {  // x = x/r
-	for (int j = 0; j < PD_n; j++) { 
+	for (int j = 0; j < PD_n; j++) 
 		y[j] = x[j] / r;
-	}
 }
 
 inline void Vector_Round(PT_vector_T x) {
@@ -736,11 +797,16 @@ inline void Vector_Round(PT_vector_T x) {
 	}
 }
 
-// Calculating unit vector
-inline void Vector_Unit(PT_vector_T vector, PT_vector_T unitVector) {
+inline void Vector_EpsZero(PT_vector_T x) { // If x[j] < PP_EPS_ZERO then x[j] = 0
+	for (int j = 0; j < PD_n; j++)
+		if (fabs(x[j]) < PP_EPS_ZERO)
+			x[j] = 0;
+}
+
+inline void Vector_Unit(PT_vector_T vector) { // Calculating unit vector
 	double normOfVector = sqrt(Vector_NormSquare(vector));
 	for (int j = 0; j < PD_n; j++) { 
-		unitVector[j] = unitVector[j] / normOfVector;
+		vector[j] /= normOfVector;
 	}
 };
 
