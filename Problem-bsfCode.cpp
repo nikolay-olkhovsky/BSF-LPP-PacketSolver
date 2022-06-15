@@ -192,12 +192,12 @@ void PC_bsf_JobDispatcher(
 				*job = PP_JOB_PSEUDOPOJECTION;
 				PD_state = PP_STATE_DETERMINE_DIRECTION;
 				PD_numDetDir = 0;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 				cout << "--------- Determine Direction ------------\n";
 #ifdef PP_PAUSE
 				system("pause");
 #endif 
-#endif 
+#endif/**/
 			}
 		}
 		else {
@@ -220,14 +220,14 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 			cout << "Point in! Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
 			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
-#endif // PP_DEBUG
+#endif // PP_DEBUG/**/
 			Vector_Copy(parameter->x, PD_basePoint);
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
@@ -267,13 +267,17 @@ void PC_bsf_JobDispatcher(
 		}
 
 #ifdef PP_DEBUG
-		cout << "\t\t\tu = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-			cout << setw(PP_SETW) << PD_basePoint[j];
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
-		cout << endl;/**/
-		cout << "\t\t\tw = ";
+		static int counterIter;
+		if (counterIter % PP_BSF_TRACE_COUNT == 0) {
+			cout << "Iter # " << counterIter << "\tTime: " << round(t) << "\tu = ";
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+				cout << setw(PP_SETW) << PD_basePoint[j];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
+			cout << endl;
+		}
+		counterIter++;
+		/*cout << "\t\t\tw = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[j];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -294,7 +298,7 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) + PP_EPS_OBJECTIVE) {
+		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
 			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = "
 				<< ObjectiveF(parameter->x) << "\t=>\tPD_ObjectiveVectorLength /= 2\n";
 			if (PD_ObjectiveVectorLength < PP_EPS_OBJECTIVE_VECTOR_LENGTH) {
@@ -305,8 +309,6 @@ void PC_bsf_JobDispatcher(
 			PD_ObjectiveVectorLength /= 2;
 		}
 
-		Vector_Copy(PD_basePoint, PD_previousBasePoint);
-
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
 		if (!GetDirection(PD_basePoint, parameter->x, PD_direction)) {
@@ -314,22 +316,15 @@ void PC_bsf_JobDispatcher(
 			cout << "Direction is too small!\n";
 			return;
 		}
-		if (PP_INERTIAL_FACTOR > 0) {
-			Vector_PlusEquals(PD_direction, PD_sumDirVector);
 
-			Vector_Copy(PD_direction, PD_sumDirVector);
-			Vector_MultiplyEquals(PD_sumDirVector, PP_INERTIAL_FACTOR);
-
-			Vector_Unit(PD_direction);
-		}
-
-#ifdef PP_DEBUG //--------------------------------------//
-		cout << "\t\t\tD = ";							//
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)					//
-			cout << setw(PP_SETW) << PD_direction[j];	//
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << endl;									//
-#endif // PP_DEBUG -------------------------------------//
+/*#ifdef PP_DEBUG //--------------------------------------------//
+		cout << "\t\t\tD = ";									//
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)	//
+			cout << setw(PP_SETW) << PD_direction[j];			//
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";			//
+		cout << endl;											//
+#endif // PP_DEBUG ---------------------------------------------//
+/**/
 
 #ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
 		PD_newInequalities = false;
@@ -356,12 +351,12 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 		cout << "--------- Movement on surface ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
-#endif
-#endif
+#endif 
+#endif/**/
 		break;
 
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
@@ -372,7 +367,7 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[j];
@@ -396,51 +391,35 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 		cout << "--------- Landing ------------\n";
-#endif // PP_DEBUG
+#endif // PP_DEBUG/**/
 		break;
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX)
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-		PT_float_T F_prevBasePoint, F_basePoint;
-		F_prevBasePoint = ObjectiveF(PD_previousBasePoint);
-		F_basePoint = ObjectiveF(PD_basePoint);
-
-		if (F_basePoint < F_prevBasePoint) {
-#ifdef PP_DEBUG
-			cout << "u_i = ";
-			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-				cout << setw(PP_SETW) << PD_basePoint[j];
-			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-			cout << "\tF(t) = " << setw(PP_SETW) << F_basePoint;
-			cout << endl;
-			cout << "|F(u_{ i - 1 }) - F(u_i)| = " << F_prevBasePoint - F_basePoint << endl;
-#endif // PP_DEBUG /**/
-			if (F_prevBasePoint - F_basePoint < PP_DELTA_PREV_OBJ) {
-				cout << setw(PP_SETW) << "F(u_{i-1}) = " << F_prevBasePoint << " > F(u_i) = " << F_basePoint << endl;
-				*exit = true;
-				Vector_Copy(PD_previousBasePoint, PD_basePoint);
-				return;
-			}
-		}
 
 		//
-		/*debug*SavePoint(PD_basePoint, x0_File, t);/*end debug*/
+		/*debug*/ 
+		static int counterSave;
+		if (counterSave % PP_BSF_TRACE_COUNT == 0) 
+			SavePoint(PD_basePoint, x0_File, t);
+		counterSave++;
+		/*end debug*/
 
 		// Preparations for determining direction
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
 
 		* job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 		cout << "--------- Determining direction ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
 #endif
-#endif
+#endif/**/
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
 		if (Vector_NormSquare(PD_relaxationVector) >= PP_EPS_RELAX)
@@ -506,8 +485,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
-	cout << "Delta Obj:\t\t" << PP_DELTA_PREV_OBJ << endl;
-	cout << "Inertial Fac:\t\t" << PP_INERTIAL_FACTOR << endl;
 	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
 	cout << "Eps In:\t\t\t" << PP_EPS_IN << endl;
 	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;

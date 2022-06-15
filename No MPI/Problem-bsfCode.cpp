@@ -154,7 +154,7 @@ void PC_bsf_ProcessResults_2(
 
 void PC_bsf_ProcessResults_3(
 	PT_bsf_reduceElem_T_3* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	int reduceCounter, // Number of successfully produced Elrments of Reduce ListSave
 	PT_bsf_parameter_T* parameter, // Current Approximation
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
@@ -267,13 +267,17 @@ void PC_bsf_JobDispatcher(
 		}
 
 #ifdef PP_DEBUG
-		cout << "\t\t\tu = ";
-		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-			cout << setw(PP_SETW) << PD_basePoint[j];
-		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
-		cout << endl;/**/
-		cout << "\t\t\tw = ";
+		static int counterIter;
+		if (counterIter % PP_BSF_TRACE_COUNT == 0) {
+			cout << "Iter # " << counterIter << "\tTime: " << round(t) << "\tu = ";
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+				cout << setw(PP_SETW) << PD_basePoint[j];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(u) = " << ObjectiveF(PD_basePoint);
+			cout << endl;
+		}
+		counterIter++;
+		/*cout << "\t\t\tw = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[j];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -294,7 +298,7 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) + PP_EPS_OBJECTIVE) {
+		if (ObjectiveF(parameter->x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
 			cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = " 
 				<< ObjectiveF(parameter->x) << "\t=>\tPD_ObjectiveVectorLength /= 2\n";
 			if (PD_ObjectiveVectorLength < PP_EPS_OBJECTIVE_VECTOR_LENGTH) {
@@ -305,22 +309,12 @@ void PC_bsf_JobDispatcher(
 			PD_ObjectiveVectorLength /= 2;
 		}
 
-		Vector_Copy(PD_basePoint, PD_previousBasePoint);
-
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
 		if (!GetDirection(PD_basePoint, parameter->x, PD_direction)) {
 			*exit = true;
 			cout << "Direction is too small!\n";
 			return;
-		}
-		if (PP_INERTIAL_FACTOR > 0) {
-			Vector_PlusEquals(PD_direction, PD_sumDirVector);
-
-			Vector_Copy(PD_direction, PD_sumDirVector);
-			Vector_MultiplyEquals(PD_sumDirVector, PP_INERTIAL_FACTOR);
-
-			Vector_Unit(PD_direction);
 		}
 
 #ifdef PP_DEBUG //----------------------------------------------//
@@ -406,30 +400,15 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		Vector_Copy(parameter->x, PD_basePoint);
-		PT_float_T F_prevBasePoint, F_basePoint;
-		F_prevBasePoint = ObjectiveF(PD_previousBasePoint);
-		F_basePoint = ObjectiveF(PD_basePoint);
-
-		if (F_basePoint < F_prevBasePoint) {
-#ifdef PP_DEBUG
-			cout << "u_i = ";
-			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-				cout << setw(PP_SETW) << PD_basePoint[j];
-			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-			cout << "\tF(t) = " << setw(PP_SETW) << F_basePoint;
-			cout << endl;
-			cout << "|F(u_{ i - 1 }) - F(u_i)| = " << F_prevBasePoint - F_basePoint << endl;
-#endif // PP_DEBUG /**/
-			if (F_prevBasePoint - F_basePoint < PP_DELTA_PREV_OBJ) {
-				cout << setw(PP_SETW) << "F(u_{i-1}) = " << F_prevBasePoint << " > F(u_i) = " << F_basePoint << endl;
-				*exit = true;
-				Vector_Copy(PD_previousBasePoint, PD_basePoint);
-				return;
-			}
-		}
 
 		WriteTrace(PD_basePoint);
-		/*debug*SavePoint(PD_basePoint, x0_File, t);/*end debug*/
+
+		/*debug*/
+		static int counterSave;
+		if (counterSave % PP_BSF_TRACE_COUNT == 0)
+			SavePoint(PD_basePoint, x0_File, t);
+		counterSave++;
+		/*end debug*/
 
 		// Preparations for determining direction
 		Vector_PlusEquals(parameter->x, PD_objectiveVector);
@@ -507,8 +486,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 
 	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
-	cout << "Delta Obj:\t\t" << PP_DELTA_PREV_OBJ << endl;
-	cout << "Inertial Fac:\t\t" << PP_INERTIAL_FACTOR << endl;
 	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
 	cout << "Eps In:\t\t\t" << PP_EPS_IN << endl;
 	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;
