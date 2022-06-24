@@ -25,12 +25,14 @@ void		ProblemOutput(double elapsedTime);
 bool		SavePoint(PT_vector_T x, const char* filename, double elapsedTime);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
 void		SkipComments(FILE* stream);
+void		SortObjVarI();
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint);
 void		Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y);
 void		Vector_DivideEquals(PT_vector_T x, double r);
 PT_float_T	Vector_DotProductSquare(PT_vector_T x, PT_vector_T y);
 void		Vector_EpsZero(PT_vector_T x);
+PT_float_T	Vector_Norm(PT_vector_T x);
 PT_float_T	Vector_NormSquare(PT_vector_T x);
 void		Vector_MinusEquals(PT_vector_T equalPoint, PT_vector_T minusVector);
 void		Vector_MultiplyByNumber(PT_vector_T x, double r, PT_vector_T y);
@@ -42,6 +44,7 @@ void		Vector_Round(PT_vector_T x);
 void		Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T PD_relaxationVector);
 void		Vector_Subtraction(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Unit(PT_vector_T vector);
+//
 //====================== Macros ================================
 #define PF_MIN(x,y) (x<y?x:y)
 #define PF_MAX(x,y) (x>y?x:y)

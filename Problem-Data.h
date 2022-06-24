@@ -28,9 +28,8 @@ static PT_vector_T PD_hi;					// Higher bound
 static PT_vector_T PD_lo;					// Lower bound
 static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
 static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
+static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
 static PT_vector_T PD_relaxationVector;
-static PT_vector_T PD_sumDirVector;			// Vector of sum of directions
-
 //========================== INput/Output ====================================
 static string PD_lppFile; /* LPP file in the following format:
 ------------ begin of file -------------
