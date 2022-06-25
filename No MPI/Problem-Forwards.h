@@ -11,6 +11,8 @@ This source code has been produced with using BSF-skeleton
 bool		Conversion();
 PT_float_T	Distance(PT_vector_T x, PT_vector_T y);
 bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T unitVector);
+/* New */void		List_Insert(double elem);
+/* New */double		List_Avg();
 bool		LoadLppFormat();
 bool		LoadMatrixFormat();
 PT_float_T	ObjectiveF(PT_vector_T x);

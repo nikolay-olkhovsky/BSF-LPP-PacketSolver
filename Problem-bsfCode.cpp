@@ -172,6 +172,9 @@ void PC_bsf_JobDispatcher(
 	const char* x0_File = PD_MTX_File_x0.c_str();
 	static int indexToBlock;
 	int sign;
+	/* New */ double objF;
+	/* New */ double newAvgObjValue;
+	/* New */ double AvgObjValueDelta;
 
 	parameter->i = 0;
 
@@ -352,7 +355,7 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 		cout << "--------- Movement on surface ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
@@ -367,7 +370,7 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
@@ -399,15 +402,20 @@ void PC_bsf_JobDispatcher(
 		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
 			return;
 
-		//Vector_EpsZero(parameter->x);
+		/* New */ objF = ObjectiveF(parameter->x);
+		/* New */ List_Insert(objF);
+		/* New */ newAvgObjValue = List_Avg();
+		/* New */ AvgObjValueDelta = fabs(newAvgObjValue - PD_avgObjValue);
+		/* New */ PD_avgObjValue = newAvgObjValue;
 
 #ifdef PP_DEBUG
-		cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
+		/* New (Changed)*/ cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t)
+			<< ". Delta ==============> " << AvgObjValueDelta << endl;
 		cout << "\t\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+		cout << "\tF(t) = " << setw(PP_SETW) << objF;
 		cout << endl;
 #endif // PP_DEBUG /**/
 
@@ -415,11 +423,8 @@ void PC_bsf_JobDispatcher(
 
 		//
 
-		/*debug*
-		static int counterSave;
-		if (counterSave % PP_BSF_TRACE_COUNT == 0) 
+		/*debug*/
 			SavePoint(PD_basePoint, x0_File, t);
-		counterSave++;
 		/*end debug*/
 
 		// Preparations for determining direction
@@ -1433,3 +1438,21 @@ inline void SortObjVarI() { // Sorting objective variables in absolute descendin
 		}
 	}
 }
+
+/* New */
+static void List_Insert(double elem) {
+	PD_list[PD_i] = elem;
+	PD_i = (PD_i + 1) % PP_LIST_LENGTH;
+	if (PD_k < PP_LIST_LENGTH)
+		PD_k++;
+}
+
+static double List_Avg() {
+	double avg = 0;
+	for (int j = 0; j < PD_k; j++)
+		avg += PD_list[j];
+	if (PD_k == 0)
+		return 0;
+	return avg / PD_k;
+}
+/* End New */

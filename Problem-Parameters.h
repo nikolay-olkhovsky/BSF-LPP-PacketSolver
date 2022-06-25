@@ -38,15 +38,15 @@ This source code has been produced with using BSF-skeleton
 #define PP_N 138	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					50E-1	// Minimal distance to polytope (not too small!!!)
+#define PP_EPS_IN					5E-1	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-4	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
 #define PP_EPS_ZERO_COMPARE			1E-6	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		-225494.963	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
-#define PP_OBJECTIVE_VECTOR_LENGTH	0.01		// Length of Objective Vector
+#define PP_LAMBDA					1.99		// 0<PP_LAMBDA<2 relaxation speed
+#define PP_OBJECTIVE_VECTOR_LENGTH	0.01	// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
@@ -209,6 +209,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_SF 200					// Scale factor
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH	5 // Maximal number of shifts with the same length
 #define PP_MAX_ITER_COUNT				10000000000 // Maximal count of iterations
+/* New */ #define PP_LIST_LENGTH		100 // Length of List of Objective Values
 
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output

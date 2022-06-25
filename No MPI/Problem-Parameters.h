@@ -16,7 +16,7 @@ This source code has been produced with using BSF-skeleton
 //=========================== Problem Parameters =========================
 #ifdef MTX_FORMAT
 
-/**#define PP_MTX_PROBLEM_NAME		"afiro"		 //==========================================
+/**/#define PP_MTX_PROBLEM_NAME		"afiro"		 //==========================================
 #define PP_M 27		// Number of equations (number of rows in *.mtx)
 #define PP_N 51		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
@@ -33,7 +33,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**********/#define PP_MTX_PROBLEM_NAME		"adlittle"	//==========================================
+/**********#define PP_MTX_PROBLEM_NAME		"adlittle"	//==========================================
 #define PP_M 56		// Number of equations (number of rows in *.mtx)
 #define PP_N 138	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
@@ -45,7 +45,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
 #define PP_EPS_ZERO_COMPARE			1E-4	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		-225494.963	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
+#define PP_LAMBDA					1.99	// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	50		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		0.1		// Start length of shift vector
 //------------------------------------------------------------------/**/
@@ -209,6 +209,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_SF 200					// Scale factor
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH	5 // Maximal number of shifts with the same length
 #define PP_MAX_ITER_COUNT				10000000000 // Maximal count of iterations
+/* New */ #define PP_LIST_LENGTH		100 // Length of List of Objective Values
 
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output

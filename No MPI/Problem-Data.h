@@ -11,6 +11,8 @@ using namespace std;
 //========================== Problem variables ====================================
 static int		PD_m;						// Current number of inequalities
 static int		PD_n;						// Curtrent space dimension
+static double	PD_epsIn = PP_EPS_IN;		// Minimal distance to polytope
+/* New */ static double PD_avgObjValue;		// Average Value of Objective Function
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequalities;
@@ -30,6 +32,12 @@ static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
 static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
 static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
 static PT_vector_T PD_relaxationVector;
+
+/* New */ //=============== List of objective values ====================================
+/* New */ static double PD_list[PP_LIST_LENGTH];
+/* New */ static int PD_i; // First elem
+/* New */ static int PD_k; // Lehgth of List
+
 //========================== INput/Output ====================================
 static string PD_lppFile; /* LPP file in the following format:
 ------------ begin of file -------------

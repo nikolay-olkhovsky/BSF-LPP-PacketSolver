@@ -172,6 +172,9 @@ void PC_bsf_JobDispatcher(
 	const char* x0_File = PD_MTX_File_x0.c_str();
 	static int indexToBlock;
 	int sign;
+	/* New */ double objF;
+	/* New */ double newAvgObjValue;
+	/* New */ double AvgObjValueDelta;
 
 	parameter->i = 0;
 
@@ -350,7 +353,7 @@ void PC_bsf_JobDispatcher(
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 		cout << "--------- Movement on surface ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
@@ -365,7 +368,7 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-#ifdef PP_DEBUG
+/*#ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
@@ -397,8 +400,15 @@ void PC_bsf_JobDispatcher(
 		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
 			return;
 
+		/* New */ objF = ObjectiveF(parameter->x);
+		/* New */ List_Insert(objF);
+		/* New */ newAvgObjValue = List_Avg();
+		/* New */ AvgObjValueDelta = fabs(newAvgObjValue - PD_avgObjValue);
+		/* New */ PD_avgObjValue = newAvgObjValue;
+
 #ifdef PP_DEBUG
-		cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
+		/* New (Changed)*/ cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t)
+			<< ". newAvgObjValue = " << newAvgObjValue << ". Delta = " << AvgObjValueDelta << endl;
 		cout << "\t\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
@@ -412,10 +422,7 @@ void PC_bsf_JobDispatcher(
 		//WriteTrace(PD_basePoint);
 
 		/*debug*
-		static int counterSave;
-		if (counterSave % PP_BSF_TRACE_COUNT == 0)
 			SavePoint(PD_basePoint, x0_File, t);
-		counterSave++;
 		/*end debug*/
 
 		// Preparations for determining direction
@@ -665,9 +672,9 @@ inline PT_float_T Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_IN
+inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PD_epsIn
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
-	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
+	return Vector_DotProductSquare(a, point) <= b + PD_epsIn;
 }
 
 inline bool PointInPolytope(PT_vector_T x) { // If the point belongs to the polytope
@@ -1429,6 +1436,25 @@ inline void SortObjVarI() { // Sorting objective variables in absolute descendin
 		}
 	}
 }
+
+/* New */
+static void List_Insert(double elem) {
+	PD_list[PD_i] = elem;
+	PD_i = (PD_i + 1) % PP_LIST_LENGTH;
+	if (PD_k < PP_LIST_LENGTH)
+		PD_k++;
+}
+
+static double List_Avg() {
+	double avg = 0;
+	for (int j = 0; j < PD_k; j++)
+		avg += PD_list[j];
+	if (PD_k == 0)
+		return 0;
+	return avg / PD_k;
+}
+/* End New */
+
 inline PT_float_T RndPositiveValue(PT_float_T rndMax) {
 	return (((PT_float_T)rand() / ((PT_float_T)RAND_MAX + 1)) * rndMax);
 }
