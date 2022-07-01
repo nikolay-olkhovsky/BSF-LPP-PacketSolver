@@ -12,50 +12,51 @@ This source code has been produced with using BSF-skeleton
 #define PP_PATH "C:/TEMP/"
 //#define PP_PATH ""
 //#define PP_PAUSE
-#define PP_MAJOR_COORDINATES_CAN_NOT_DECREASE // straightens the trace, but can lead to an incorrect solution
 //=========================== Problem Parameters =========================
-#ifdef MTX_FORMAT
-
-/**/#define PP_MTX_PROBLEM_NAME		"afiro"		 //==========================================
+/**#define PP_PROBLEM_NAME		"afiro"		 //==========================================
 #define PP_M 27		// Number of equations (number of rows in *.mtx)
 #define PP_N 51		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-1	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-4	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(w)|
+#define PP_EPS_SHIFT				1E-4	// Minimal shift
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
 #define PP_EPS_ZERO_COMPARE			1E-6	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		464.7531	// Exact maximum value of objective function
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MAX					1		// Maximum distance from polytope
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	1000		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
+#define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
 
-/**********#define PP_MTX_PROBLEM_NAME		"adlittle"	//==========================================
+/**#define PP_PROBLEM_NAME		"adlittle"	//==========================================
 #define PP_M 56		// Number of equations (number of rows in *.mtx)
 #define PP_N 138	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-4	// Minimal shift
-#define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
-#define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE			1E-4	// Comparison precision
+#define PP_EPS_DIR_LENGTH			1E-5	// Minimal Length of Direction Vector
+#define PP_EPS_OBJECTIVE			5E-2	// < |F(u)-F(w)|
+#define PP_EPS_SHIFT				1E-8	// Minimal shift
+#define PP_EPS_ZERO_DIR				1E-8	// Accuracy of zero value for direction vector coordinates
+#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		-225494.963	// Exact maximum value of objective function
-#define PP_LAMBDA					1.99	// 0<PP_LAMBDA<2 relaxation speed
-#define PP_OBJECTIVE_VECTOR_LENGTH	50		// Length of Objective Vector
-#define PP_START_SHIFT_LENGTH		0.1		// Start length of shift vector
+#define PP_GAP_MIN					1E-7	// Minimum distance to polytope (not too small!!!)
+#define PP_GAP_MAX					1		// Maximum distance from polytope
+#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
+#define PP_OBJECTIVE_VECTOR_LENGTH	5E-4	// Length of Objective Vector
+#define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
+#define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"blend"	//==========================================
+/**#define PP_PROBLEM_NAME		"blend"	//==========================================
 #define PP_M 74		// Number of equations (number of rows in *.mtx)
 #define PP_N 114	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-10	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-6	// Minimal shift
 #define PP_EPS_ZERO_DIR					1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EPS_ZERO_COMPARE				1E-6	// Comparison precision
@@ -67,28 +68,28 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		0.1		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
+/**#define PP_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
 #define PP_M 24		// Number of equations (number of rows in *.mtx)
 #define PP_N 1049	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"kb2"	// -1749.9  //==========================================
+/**#define PP_PROBLEM_NAME		"kb2"	// -1749.9  //==========================================
 #define PP_M 43	// Number of equations (number of rows in *.mtx)
 #define PP_N 68	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"recipe"	// -266.61  //==========================================
+/**#define PP_PROBLEM_NAME		"recipe"	// -266.61  //==========================================
 #define PP_M 91		// Number of equations (number of rows in *.mtx)
 #define PP_N 204	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"sc50a"	// -64.575
+/**#define PP_PROBLEM_NAME		"sc50a"	// -64.575
 #define PP_M 50		// Number of equations (number of rows in *.mtx)
 #define PP_N 78	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"sc50b"	//==========================================
+/**#define PP_PROBLEM_NAME		"sc50b"	//==========================================
 #define PP_M 50		// Number of equations (number of rows in *.mtx)
 #define PP_N 78	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-6	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-4	// Minimal shift
 #define PP_EPS_ZERO_DIR					1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EPS_ZERO_COMPARE				1E-6	// Comparison precision
@@ -100,33 +101,35 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"share2b" // -415.73  //==========================================
+/**#define PP_PROBLEM_NAME		"share2b" // -415.73  //==========================================
 #define PP_M 96		// Number of equations (number of rows in *.mtx)
 #define PP_N 162	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple1" //==========================================
+/**/#define PP_PROBLEM_NAME		"simple1" //==========================================
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
+#define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
-#define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
+#define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MAX					PP_GAP_MIN		// Maximum distance from polytope
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
+#define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple1.1" //==========================================
+/**#define PP_PROBLEM_NAME		"simple1.1" //==========================================
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
@@ -138,12 +141,12 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple2" //==========================================
+/**#define PP_PROBLEM_NAME		"simple2" //==========================================
 #define PP_M 5		// Number of equations (number of rows in *.mtx)
 #define PP_N 8		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
@@ -155,12 +158,12 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple3" //==========================================
+/**#define PP_PROBLEM_NAME		"simple3" //==========================================
 #define PP_M 6		// Number of equations (number of rows in *.mtx)
 #define PP_N 8		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-5	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-5	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
@@ -172,12 +175,12 @@ This source code has been produced with using BSF-skeleton
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
 
-/**#define PP_MTX_PROBLEM_NAME		"simple1min" //==========================================
+/**#define PP_PROBLEM_NAME		"simple1min" //==========================================
 #define PP_M 5		// Number of equations (number of rows in *.mtx)
 #define PP_N 8		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
-#define PP_EPS_IN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_EPS_SHIFT				1E-5	// Minimal shift
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
@@ -188,36 +191,15 @@ This source code has been produced with using BSF-skeleton
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
-
-#ifdef  PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-#define PP_MM (2*PP_M+3*PP_N-1)	// Maximal number of inequalities including additional
-#else
-#define PP_MM (2*PP_M+2*PP_N)			// Maximal number of inequalities including additional
-#endif
-#else
-#define PP_MTX_PROBLEM_NAME		"lpp"
-#define PP_M 7		// Number of inequalities
-#define PP_N 3		// Space dimension
-#ifdef  PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-#define PP_MM (PP_M + PP_N - 1)	// Maximal number of inequalities including additional
-#else
-#define PP_MM PP_M			// Maximal number of inequalities including additional
-#endif
-#endif
-
-//--------------------------------------
-#define PP_SF 200					// Scale factor
+//================================ Common Paramrters ===========================
+#define PP_MM (PP_STRAIGHT_TRACE ? 2*PP_M+3*PP_N-1 : 2*PP_M+3*PP_N-1)
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH	5 // Maximal number of shifts with the same length
 #define PP_MAX_ITER_COUNT				10000000000 // Maximal count of iterations
-/* New */ #define PP_LIST_LENGTH		100 // Length of List of Objective Values
-
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 //#define PP_MATRIX_OUTPUT	// To output Matrix
 #define PP_SETW 16
 #define PP_TRACE_FILE "trace.txt"
-//------------------------- LPP format ----------------
-#define PP_LPP_FILE "lpp.txt"
 //------------------------- Matrix format ----------------
 #define PP_MTX_PREFIX			"lp_"
 #define PP_MTX_POSTFIX_A		".mtx"
@@ -227,6 +209,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_MTX_POSTFIX_C		"_c.mtx"
 #define PP_MTX_POSTFIX_X0		"_x0.mtx" // Starting point on polytope
 #define PP_MTX_POSTFIX_SO		"_so.mtx" // Solution
+#define PP_MTX_POSTFIX_TR		"_tr.mtx" // Trace
 //-------------------------- Jobs  -----------------------
 #define PP_JOB_PSEUDOPOJECTION	0 
 #define PP_JOB_CHECK			1		

@@ -11,9 +11,6 @@ This source code has been produced with using BSF-skeleton
 bool		Conversion();
 PT_float_T	Distance(PT_vector_T x, PT_vector_T y);
 bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T unitVector);
-/* New */void		List_Insert(double elem);
-/* New */double		List_Avg();
-bool		LoadLppFormat();
 bool		LoadMatrixFormat();
 PT_float_T	ObjectiveF(PT_vector_T x);
 void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
@@ -22,8 +19,6 @@ bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInPolytope(PT_vector_T x);
 bool		PointInPolytope_s(PT_vector_T x);
 void		ProblemOutput(double elapsedTime);
-
-
 bool		SavePoint(PT_vector_T x, const char* filename, double elapsedTime);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, double siftLength, PT_vector_T endPoint);
 void		SkipComments(FILE* stream);

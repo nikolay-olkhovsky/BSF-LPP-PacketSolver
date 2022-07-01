@@ -9,9 +9,9 @@ This source code has been produced with using BSF-skeleton
 #include "Problem-Types.h"		// Problem Parameters 
 using namespace std;
 //========================== Problem variables ====================================
-static int		PD_m;						// Upper bound of valuable inequalities
-static int		PD_n;						// Space dimension
-/* New */ static double PD_avgObjValue;		// Average Value of Objective Function
+static int		PD_m;						// Current number of inequalities
+static int		PD_n;						// Curtrent space dimension
+static double	PD_Gap = PP_GAP_MAX;		// Minimal distance to polytope
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequalities;
@@ -31,26 +31,11 @@ static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
 static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
 static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
 static PT_vector_T PD_relaxationVector;
-
-/* New */ //=============== List of objective values ====================================
-/* New */ static double PD_list[PP_LIST_LENGTH];
-/* New */ static int PD_i; // First elem
-/* New */ static int PD_k; // Lehgth of List
-
-						   //========================== INput/Output ====================================
-static string PD_lppFile; /* LPP file in the following format:
------------- begin of file -------------
-m n
-A_11 A_12 ... A_1n b_1
-A_21 A_22 ... A_2n b_2
-...
-A_m1 A_m2 ... A_mn b_m
-c_1 c_2 ... c_n
------------- end of file----------------*/
-
+//========================== Input/Output ====================================
+static string PD_problemName;
 //
 //
-
+// 
 //========================== Matrix format ====================================
 // nor - number of rows; noc - number of columns; non - number of non-zero values
 static string PD_MTX_File_A; /* File of matrix A (only non-zero elements):
@@ -91,10 +76,14 @@ c_{nor}
 static string PD_MTX_File_x0;/* File of starting point in the following format:
 ------------ begin of file -------------
 nor noc // nor=n (dimension); noc=1
-x_1 x_2 ... x_n
+x_1
+...
+x_{nor}
 ------------ end of file----------------*/
 static string PD_MTX_File_so;/* Solution file in the following format:
 ------------ begin of file -------------
 nor noc // nor=n (dimension); noc=1
-x_1 x_2 ... x_n
+x_1
+...
+x_{nor}
 ------------ end of file----------------*/

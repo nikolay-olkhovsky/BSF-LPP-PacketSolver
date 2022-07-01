@@ -21,22 +21,34 @@ void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_ObjectiveVectorLength = PP_OBJECTIVE_VECTOR_LENGTH;	// Initiat length of objective vector
 
-#ifdef MTX_FORMAT
+	PD_problemName = PP_PROBLEM_NAME;
 	* success = LoadMatrixFormat();
-#else
-	* success = LoadLppFormat();
-#endif
 
 	if (*success == false)
 		return;
 
 	PD_MTX_File_so = PP_PATH;
 	PD_MTX_File_so += PP_MTX_PREFIX;
-	PD_MTX_File_so += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_so += PD_problemName;
 	PD_MTX_File_so += PP_MTX_POSTFIX_SO;
 	//
 	//
 	// 
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
 	//
 	//
 
@@ -95,7 +107,7 @@ void PC_bsf_ReduceF_3(PT_bsf_reduceElem_T_3* x, PT_bsf_reduceElem_T_3* y, PT_bsf
 //0. Start
 void PC_bsf_ProcessResults(
 	PT_bsf_reduceElem_T* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	int reduceCounter, // Number of successfully produced Elements of Reduce List
 	PT_bsf_parameter_T* parameter, // Current Approximation
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
@@ -117,7 +129,7 @@ void PC_bsf_ProcessResults(
 // 1. Movement on Polytope  ========================================================
 void PC_bsf_ProcessResults_1(
 	PT_bsf_reduceElem_T_1* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	int reduceCounter, // Number of successfully produced Elements of Reduce List
 	PT_bsf_parameter_T* parameter, // Current Approximation
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
@@ -136,7 +148,7 @@ void PC_bsf_ProcessResults_1(
 // 2. 
 void PC_bsf_ProcessResults_2(
 	PT_bsf_reduceElem_T_2* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	int reduceCounter, // Number of successfully produced Elements of Reduce List
 	PT_bsf_parameter_T* parameter, // Current Approximation
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
@@ -154,7 +166,7 @@ void PC_bsf_ProcessResults_2(
 
 void PC_bsf_ProcessResults_3(
 	PT_bsf_reduceElem_T_3* reduceResult,
-	int reduceCounter, // Number of successfully produced Elrments of Reduce List
+	int reduceCounter, // Number of successfully produced Elements of Reduce List
 	PT_bsf_parameter_T* parameter, // Current Approximation
 	int* nextJob,
 	bool* exit // "true" if Stopping Criterion is satisfied, and "false" otherwise
@@ -171,10 +183,9 @@ void PC_bsf_JobDispatcher(
 	//
 	const char* x0_File = PD_MTX_File_x0.c_str();
 	static int indexToBlock;
+	static double prevLandingObjVal = INFINITY;
+	double objF;
 	int sign;
-	/* New */ double objF;
-	/* New */ double newAvgObjValue;
-	/* New */ double AvgObjValueDelta;
 
 	parameter->i = 0;
 
@@ -269,6 +280,8 @@ void PC_bsf_JobDispatcher(
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
 		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
 			return;
+		if (!PointInPolytope_s(parameter->x))
+			return;
 
 #ifdef PP_DEBUG
 		//		static int counterIter;
@@ -300,7 +313,7 @@ void PC_bsf_JobDispatcher(
 		PD_numDetDir++;
 		if (PD_numDetDir > 2) {
 			cout << "Number of Squential States 'Determine Direction' is greater than 2!\n";
-			cout << "Maybe, you should increase PP_EPS_ZERO_DIR.\n";
+			cout << "Maybe, you should increase PP_OBJECTIVE_VECTOR_LENGTH.\n";
 			*exit = true;
 			return;
 		}
@@ -331,36 +344,37 @@ void PC_bsf_JobDispatcher(
 		cout << endl;											//
 #endif // PP_DEBUG ---------------------------------------------//
 
-#ifdef PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
-		sign = (PD_c[PD_objI[indexToBlock]] >= 0 ? 1 : -1);
-		if (sign * PD_direction[PD_objI[indexToBlock]] <= 0 && indexToBlock < PD_n - 1) {
-			parameter->i = PD_m;
-			Vector_Copy(PD_A[PD_m], parameter->a);
-			parameter->a[PD_objI[indexToBlock]] = -sign;
-			parameter->b = -sign * PD_basePoint[PD_objI[indexToBlock]];
-			PD_m++;
+		if (PP_STRAIGHT_TRACE) {
+			sign = (PD_c[PD_objI[indexToBlock]] >= 0 ? 1 : -1);
+			if (sign * PD_direction[PD_objI[indexToBlock]] <= 0 && indexToBlock < PD_n - 1) {
+				parameter->i = PD_m;
+				Vector_Copy(PD_A[PD_m], parameter->a);
+				parameter->a[PD_objI[indexToBlock]] = -sign;
+				parameter->b = -sign * PD_basePoint[PD_objI[indexToBlock]];
+				PD_m++;
 #ifdef PP_DEBUG
-			cout << "Variable " << indexToBlock << " is blocked.\n";
+				cout << "Variable " << indexToBlock << " is blocked.\n";
 #endif // PP_DEBUG
-			PD_numDetDir = 0;
-			indexToBlock++;
-			if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_COMPARE) {
-				Vector_Copy(PD_basePoint, parameter->x);
-				Vector_PlusEquals(parameter->x, PD_objectiveVector);
-				return;
+				PD_numDetDir = 0;
+				indexToBlock++;
+				if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_COMPARE) {
+					Vector_Copy(PD_basePoint, parameter->x);
+					Vector_PlusEquals(parameter->x, PD_objectiveVector);
+					return;
+				}
 			}
 		}
-#endif // PP_MAJOR_COORDINATES_CAN_NOT_DECREASE
+
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 		*job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-/*#ifdef PP_DEBUG
+/**#ifdef PP_DEBUG
 		cout << "--------- Movement on surface ------------\n";
 #ifdef PP_PAUSE
 		system("pause");
 #endif 
-#endif/**/
+#endif // PP_DEBUG /**/
 		break;
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
 		if (PD_pointIn) {
@@ -370,7 +384,7 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-/*#ifdef PP_DEBUG
+/**#ifdef PP_DEBUG
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
@@ -401,16 +415,28 @@ void PC_bsf_JobDispatcher(
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
 		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
 			return;
+		if (!PointInPolytope_s(parameter->x))
+			return;
 
-		/* New */ objF = ObjectiveF(parameter->x);
-		/* New */ List_Insert(objF);
-		/* New */ newAvgObjValue = List_Avg();
-		/* New */ AvgObjValueDelta = fabs(newAvgObjValue - PD_avgObjValue);
-		/* New */ PD_avgObjValue = newAvgObjValue;
+		objF = ObjectiveF(parameter->x);
+		if (objF + PP_EPS_OBJECTIVE < prevLandingObjVal) {
+#ifdef PP_DEBUG
+			cout << "New objective value is smaller than previous one!";
+#endif // PP_DEBUG /**/
+			if (PD_Gap < PP_GAP_MIN) {
+				PD_Gap = PP_GAP_MIN;
+#ifdef PP_DEBUG
+				cout << " PD_Gap < PP_GAP_MIN!" << endl;
+#endif // PP_DEBUG /**/
+			}
+			else if (PD_Gap > PP_GAP_MIN)
+#ifdef PP_DEBUG
+				cout << "! => PD_Gap /= 2 == " << (PD_Gap /= 2) << endl;
+#endif // PP_DEBUG /**/
+		}
 
 #ifdef PP_DEBUG
-		/* New (Changed)*/ cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t)
-			<< ". Delta ==============> " << AvgObjValueDelta << endl;
+		cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
 		cout << "\t\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
@@ -420,11 +446,9 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG /**/
 
 		Vector_Copy(parameter->x, PD_basePoint);
-
 		//
-
 		/*debug*/
-			SavePoint(PD_basePoint, x0_File, t);
+		SavePoint(PD_basePoint, x0_File, t);
 		/*end debug*/
 
 		// Preparations for determining direction
@@ -496,9 +520,8 @@ void PC_bsf_JobDispatcher(
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "=================================================== BSF Target ====================================================" << endl;
-	cout << "Problem name: " << PP_MTX_PROBLEM_NAME << endl;
+	cout << "Problem name: " << PD_problemName << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
-
 #ifdef PP_BSF_OMP
 #ifdef PP_BSF_NUM_THREADS
 	cout << "Number of Threads: " << PP_BSF_NUM_THREADS << endl;
@@ -514,19 +537,21 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 #else
 	cout << "Map List is not Fragmented." << endl;
 #endif
-
-	cout << "Before conversion: \tm = " << PP_M << "\tn = " << PP_N << endl;
-	cout << "After conversion: \tm = " << PD_m << "\tn = " << PD_n << endl;
+	cout << "Before conversion: tm =\t" << PP_M << "\tn = " << PP_N << endl;
+	cout << "After conversion:   m =\t" << PD_m << "\tn = " << PD_n << endl;
 	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
-	cout << "Eps In:\t\t\t" << PP_EPS_IN << endl;
-	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;
-	cout << "Eps Direction Zero:\t" << PP_EPS_ZERO_DIR << endl;
-	cout << "Eps Compare:\t\t" << PP_EPS_ZERO_COMPARE << endl;
-	cout << "Eps Minimal Length of Direction Vector: " << PP_EPS_DIR_LENGTH << endl;
+	cout << "Eps Min Dir Length:\t" << PP_EPS_DIR_LENGTH << endl;
 	cout << "Eps Objective:\t\t" << PP_EPS_OBJECTIVE << endl;
+	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;
+	cout << "Eps Zero Direction:\t" << PP_EPS_ZERO_DIR << endl;
+	cout << "Eps Zero Compare:\t" << PP_EPS_ZERO_COMPARE << endl;
+	cout << "Exact Obj Value:\t" << PP_EXACT_OBJ_VALUE << endl;
+	cout << "Gap min:\t\t" << PP_GAP_MIN << endl;
+	cout << "Gap max:\t\t" << PP_GAP_MAX << endl;
 	cout << "Lambda:\t\t\t" << PP_LAMBDA << endl;
-	cout << "Initial Length of Objective Vector: " << PP_OBJECTIVE_VECTOR_LENGTH << endl;
-	cout << "Start length of shift vector: " << PP_START_SHIFT_LENGTH << endl;
+	cout << "Obj Vector Length:\t" << PP_OBJECTIVE_VECTOR_LENGTH << endl;
+	cout << "Start Shift Lengt:\t" << PP_START_SHIFT_LENGTH << endl;
+	cout << "Straight Trace:\t\t" << PP_STRAIGHT_TRACE << endl;
 
 #ifdef PP_MATRIX_OUTPUT
 	cout << "------- Matrix PD_A & Column PD_b -------" << endl;
@@ -674,9 +699,9 @@ inline PT_float_T Vector_NormSquare(PT_vector_T x) {
 	return sum;
 }
 
-inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PP_EPS_IN
+inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PD_Gap
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
-	return Vector_DotProductSquare(a, point) <= b + PP_EPS_IN;
+	return Vector_DotProductSquare(a, point) <= b + PD_Gap;
 }
 
 inline bool PointInPolytope(PT_vector_T x) { // If the point belongs to the polytope
@@ -708,10 +733,7 @@ inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector
 	for (int j = 0; j < PD_n; j++) { 
 		unitVector[j] = endPoint[j] - startPoint[j];
 	}
-	double normOfUnitVector = sqrt(Vector_NormSquare(unitVector));
-/*#ifdef PP_DEBUG
-	cout << setw(PP_SETW) << "||w-u|| = " << normOfUnitVector << endl;
-#endif // PP_DEBUG /**/
+	double normOfUnitVector = Vector_Norm(unitVector);
 	
 	if (normOfUnitVector < PP_EPS_DIR_LENGTH)
 		return false;
@@ -719,14 +741,6 @@ inline bool GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector
 	for (int j = 0; j < PD_n; j++) { 
 		unitVector[j] /= normOfUnitVector;
 	}
-
-	/*for (int j = 0; j < PD_n; j++) {
-		if (fabs(unitVector[j]) < PP_EPS_ZERO_DIR)
-			unitVector[j] = 0;
-	}/**/
-
-	//Vector_EpsZero(unitVector);
-
 	return true;
 }
 
@@ -823,64 +837,6 @@ inline PT_float_T ObjectiveF(PT_vector_T x) {
 	return s;
 }
 
-static bool LoadLppFormat() {
-	PD_lppFile = PP_PATH;
-	PD_lppFile += PP_LPP_FILE;
-	const char* lppFile = PD_lppFile.c_str();
-
-	FILE* stream;
-	float buf;
-	stream = fopen(lppFile, "r");
-
-	if (stream == NULL) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
-			cout << "Failure of opening file '" << lppFile << "'.\n";
-		return false;
-	}
-
-	if (fscanf(stream, "%d%d", &PD_m, &PD_n) == 0) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster) 
-			cout << "Unexpected end of file" << endl;
-		return false;
-	}
-
-	if (PD_n > PP_N) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout 
-			<< "Invalid input data: Space dimension n = " << PD_n << " must be < PP_N + 1" << PP_N + 1 << "\n";
-		return false;
-	}
-
-	if (PD_m > PP_MM) {
-		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
-			cout
-			<< "Invalid input data: Number of inequalities m = " << PD_m << " must be < PP_MM + 1" << PP_MM + 1 << "\n";
-		return false;
-	}
-
-	for (int i = 0; i < PD_m; i++) {
-		for (int j = 0; j < PD_n; j++) {
-			if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
-			PD_A[i][j] = buf;
-		}
-		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
-		PD_b[i] = buf;
-	}
-
-	for (int j = 0; j < PD_n; j++) {
-		if (fscanf(stream, "%f", &buf) == 0) { if (BSF_sv_mpiRank == BSF_sv_mpiMaster) cout << "Unexpected end of file" << endl; return false; };
-		PD_c[j] = buf;
-	}
-	
-	fclose(stream);
-
-	// Generating Coordinates of starting point
-	for (int j = 0; j < PD_n; j++)
-		PD_basePoint[j] = 0;
-
-	return true;
-}
-
 static bool LoadMatrixFormat() {
 	int nor,	// Number of matrix rows
 		noc,	// Number of matrix columns
@@ -893,7 +849,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading A ------------------
 	PD_MTX_File_A = PP_PATH;
 	PD_MTX_File_A += PP_MTX_PREFIX;
-	PD_MTX_File_A += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_A += PD_problemName;
 	PD_MTX_File_A += PP_MTX_POSTFIX_A;
 	mtxFile = PD_MTX_File_A.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -977,7 +933,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading b ------------------
 	PD_MTX_File_b = PP_PATH;
 	PD_MTX_File_b += PP_MTX_PREFIX;
-	PD_MTX_File_b += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_b += PD_problemName;
 	PD_MTX_File_b += PP_MTX_POSTFIX_B;
 	mtxFile = PD_MTX_File_b.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -1023,7 +979,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading lo ------------------
 	PD_MTX_File_lo = PP_PATH;
 	PD_MTX_File_lo += PP_MTX_PREFIX;
-	PD_MTX_File_lo += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_lo += PD_problemName;
 	PD_MTX_File_lo += PP_MTX_POSTFIX_LO;
 	mtxFile = PD_MTX_File_lo.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -1070,7 +1026,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading c ------------------
 	PD_MTX_File_c = PP_PATH;
 	PD_MTX_File_c += PP_MTX_PREFIX;
-	PD_MTX_File_c += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_c += PD_problemName;
 	PD_MTX_File_c += PP_MTX_POSTFIX_C;
 	mtxFile = PD_MTX_File_c.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -1116,7 +1072,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading hi ------------------
 	PD_MTX_File_hi = PP_PATH;
 	PD_MTX_File_hi += PP_MTX_PREFIX;
-	PD_MTX_File_hi += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_hi += PD_problemName;
 	PD_MTX_File_hi += PP_MTX_POSTFIX_HI;
 	mtxFile = PD_MTX_File_hi.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -1167,7 +1123,7 @@ static bool LoadMatrixFormat() {
 	//--------------- Reading x0 ------------------
 	PD_MTX_File_x0 = PP_PATH;
 	PD_MTX_File_x0 += PP_MTX_PREFIX;
-	PD_MTX_File_x0 += PP_MTX_PROBLEM_NAME;
+	PD_MTX_File_x0 += PD_problemName;
 	PD_MTX_File_x0 += PP_MTX_POSTFIX_X0;
 	mtxFile = PD_MTX_File_x0.c_str();
 	stream = fopen(mtxFile, "r+b");
@@ -1368,11 +1324,11 @@ Vector_ProjectOnHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b, PT_vec
 inline PT_float_T Distance(PT_vector_T x, PT_vector_T y) {
 	PT_vector_T z;
 	Vector_Subtraction(x, y, z);
-	return sqrt(Vector_NormSquare(z));
+	return Vector_Norm(z);
 }
 
 inline void ObjectiveUnitVector(PT_vector_T objectiveUnitVector) { // Calculating Objective Unit Vector
-	double c_norm = sqrt(Vector_NormSquare(PD_c));
+	double c_norm = Vector_Norm(PD_c);
 	Vector_DivideByNumber(PD_c, c_norm, objectiveUnitVector);
 }
 
@@ -1438,21 +1394,3 @@ inline void SortObjVarI() { // Sorting objective variables in absolute descendin
 		}
 	}
 }
-
-/* New */
-static void List_Insert(double elem) {
-	PD_list[PD_i] = elem;
-	PD_i = (PD_i + 1) % PP_LIST_LENGTH;
-	if (PD_k < PP_LIST_LENGTH)
-		PD_k++;
-}
-
-static double List_Avg() {
-	double avg = 0;
-	for (int j = 0; j < PD_k; j++)
-		avg += PD_list[j];
-	if (PD_k == 0)
-		return 0;
-	return avg / PD_k;
-}
-/* End New */
