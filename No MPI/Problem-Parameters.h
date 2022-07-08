@@ -55,22 +55,39 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 74		// Number of equations (number of rows in *.mtx)
 #define PP_N 114	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-10	// Precision for relaxation
-#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
+#define PP_EPS_RELAX				1E-3	// Precision for relaxation
+#define PP_EPS_DIR_LENGTH			1E-4	// Minimal Length of Direction Vector
+#define PP_EPS_OBJECTIVE			1E-5	// < |F(u)-F(w)|
 #define PP_EPS_SHIFT				1E-6	// Minimal shift
-#define PP_EPS_ZERO_DIR					1E-6	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE				1E-6	// Comparison precision
-#define PP_EPS_DIR_LENGTH					1E-6	// Minimal Length of Direction Vector
-#define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(w)|
+#define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
+#define PP_EPS_ZERO_COMPARE			1E-3	// Comparison precision
 #define PP_EXACT_OBJ_VALUE			30.812	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
-#define PP_OBJECTIVE_VECTOR_LENGTH	1		// Length of Objective Vector
-#define PP_START_SHIFT_LENGTH		0.1		// Start length of shift vector
+#define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
+#define PP_GAP_MAX					1E-2		// Maximum distance from polytope
+#define PP_LAMBDA					10		// 0<PP_LAMBDA<2 relaxation speed
+#define PP_OBJECTIVE_VECTOR_LENGTH	1E-1	// Length of Objective Vector
+#define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
+#define PP_STRAIGHT_TRACE			false	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
 
-/**#define PP_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
+/**/#define PP_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
 #define PP_M 24		// Number of equations (number of rows in *.mtx)
 #define PP_N 1049	// Number of variables (number of cols in *.mtx)/**/
+//------------------------------------------------------------------
+#define PP_EPS_RELAX				1E-3	// Precision for relaxation
+#define PP_EPS_DIR_LENGTH			1E-4	// Minimal Length of Direction Vector
+#define PP_EPS_OBJECTIVE			1E-5	// < |F(u)-F(w)|
+#define PP_EPS_SHIFT				1E-6	// Minimal shift
+#define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
+#define PP_EPS_ZERO_COMPARE			1E-3	// Comparison precision
+#define PP_EXACT_OBJ_VALUE			-9146.378	// Exact maximum value of objective function
+#define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
+#define PP_GAP_MAX					1E-2		// Maximum distance from polytope
+#define PP_LAMBDA					10		// 0<PP_LAMBDA<2 relaxation speed
+#define PP_OBJECTIVE_VECTOR_LENGTH	1E-1	// Length of Objective Vector
+#define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
+#define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
+//------------------------------------------------------------------/**/
 
 /**#define PP_PROBLEM_NAME		"kb2"	// -1749.9  //==========================================
 #define PP_M 43	// Number of equations (number of rows in *.mtx)
@@ -105,7 +122,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 96		// Number of equations (number of rows in *.mtx)
 #define PP_N 162	// Number of variables (number of cols in *.mtx)/**/
 
-/**/#define PP_PROBLEM_NAME		"simple1" //==========================================
+/**#define PP_PROBLEM_NAME		"simple1" //==========================================
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------

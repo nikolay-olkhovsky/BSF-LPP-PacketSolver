@@ -14,6 +14,7 @@ bool		GetDirection(PT_vector_T startPoint, PT_vector_T endPoint, PT_vector_T uni
 bool		LoadMatrixFormat();
 PT_float_T	ObjectiveF(PT_vector_T x);
 void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
+bool		OpenTraceFile();
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInPolytope(PT_vector_T x);
