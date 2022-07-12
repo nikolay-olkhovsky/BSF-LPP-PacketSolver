@@ -70,9 +70,9 @@ This source code has been produced with using BSF-skeleton
 #define PP_STRAIGHT_TRACE			false	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
 
-/**/#define PP_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
+/**#define PP_PROBLEM_NAME		"fit1d"	// -9146.378  //==========================================
 #define PP_M 24		// Number of equations (number of rows in *.mtx)
-#define PP_N 1049	// Number of variables (number of cols in *.mtx)/**/
+#define PP_N 1049	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-3	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-4	// Minimal Length of Direction Vector
@@ -122,7 +122,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 96		// Number of equations (number of rows in *.mtx)
 #define PP_N 162	// Number of variables (number of cols in *.mtx)/**/
 
-/**#define PP_PROBLEM_NAME		"simple1" //==========================================
+/**/#define PP_PROBLEM_NAME		"simple1" //==========================================
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
@@ -133,10 +133,10 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
-#define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_GAP_MAX					PP_GAP_MIN		// Maximum distance from polytope
+#define PP_GAP					1E-2		// Maximum gap from polytope surface (not too small!!!)
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
+#define PD_RELAX_VECTOR_LENGTH		1		// Length of Relaxation Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
@@ -214,7 +214,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_MAX_ITER_COUNT				10000000000 // Maximal count of iterations
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
-//#define PP_MATRIX_OUTPUT	// To output Matrix
+#define PP_MATRIX_OUTPUT	// To output Matrix
 #define PP_SETW 16
 #define PP_TRACE_FILE "trace.txt"
 //------------------------- Matrix format ----------------

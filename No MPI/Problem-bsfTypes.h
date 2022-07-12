@@ -23,6 +23,7 @@ struct PT_bsf_mapElem_T {		// Type of map-list elements
 
 struct PT_bsf_reduceElem_T {	// Type of reduce-list elements for Job 0 (default)	
 	PT_vector_T projection;	// Point projection onto hyperplane
+	bool pointIn;
 };
 
 struct PT_bsf_reduceElem_T_1 {	// Type of reduce-list elements for Job 1

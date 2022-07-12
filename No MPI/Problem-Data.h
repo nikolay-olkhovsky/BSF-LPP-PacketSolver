@@ -11,14 +11,14 @@ using namespace std;
 //========================== Problem variables ====================================
 static int		PD_m;						// Current number of inequalities
 static int		PD_n;						// Curtrent space dimension
-static double	PD_Gap = PP_GAP_MAX;		// Minimal distance to polytope
+static int		PD_listSize;				// Curtrent Map&Reduce List Size
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequalities;
 static double	PD_ObjectiveVectorLength;	// Length of objective vector
-static bool		PD_pointIn;
+static bool		PD_pointIn;					// Point is inside polytope
 static double	PD_shiftLength;				// Shift length
-static int		PD_state;
+static int		PD_state;					// State of Job Dispatcher (see PC_bsf_JobDispatcher)
 //========================== Problem structures ====================================
 static PT_matrix_T PD_A;					// Matrix of coefficients of inequalities
 static PT_column_T PD_b;					// Column of the constant terms of the system Ax <= PD_b

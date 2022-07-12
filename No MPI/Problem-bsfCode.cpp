@@ -20,6 +20,7 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_ObjectiveVectorLength = PP_OBJECTIVE_VECTOR_LENGTH;	// Initiat length of objective vector
+	PD_listSize = PP_MM;
 
 	//
 	*success = LoadMatrixFormat();
@@ -40,7 +41,7 @@ void PC_bsf_Init(bool* success) {
 }
 
 void PC_bsf_SetListSize(int* listSize) {
-	*listSize = PP_MM;
+	*listSize = PD_listSize;
 }
 
 void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
@@ -52,6 +53,7 @@ void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int* success // 1 - reduceElem was produced successfully; 0 - otherwise
 ) {
 	*success = Vector_ProjectOnHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b, reduceElem->projection);
+	reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
 }
 
 // 1. Approximate check
@@ -71,6 +73,7 @@ void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem,
 // 0. Pseudo-pojection
 void PC_bsf_ReduceF(PT_bsf_reduceElem_T* x, PT_bsf_reduceElem_T* y, PT_bsf_reduceElem_T* z) { // z = x + y
 	Vector_Addition(x->projection, y->projection, z->projection);
+	z->pointIn = x->pointIn && y->pointIn;
 }
 
 // 1. Approximate check
@@ -104,9 +107,9 @@ void PC_bsf_ProcessResults(
 	};
 #endif // PP_MAX_ITER_COUNT
 
+	PD_pointIn = reduceResult->pointIn;
 	Vector_Relaxation(reduceResult->projection, reduceCounter, PD_relaxationVector);
 	Vector_PlusEquals(parameter->x, PD_relaxationVector);
-	//Vector_Round(parameter->x);
 }
 
 // 1. Movement on Polytope  ========================================================
@@ -167,13 +170,13 @@ void PC_bsf_JobDispatcher(
 	const char* x0_File = PD_MTX_File_x0.c_str();
 	static int indexToBlock;
 	static double prevLandingObjVal = INFINITY;
-	double objF;
 	int sign;
 
 	parameter->i = 0;
 
 	switch (PD_state) {
 	case PP_STATE_START://-------------------------- Start -----------------------------
+		PD_listSize = PD_m;
 		if (PointInPolytope_s(PD_basePoint)) {
 			Vector_Copy(PD_objectiveUnitVector, PD_direction);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
@@ -332,6 +335,7 @@ void PC_bsf_JobDispatcher(
 				//
 				//
 				PD_m++;
+				PD_listSize = PD_m;
 #ifdef PP_DEBUG
 				cout << "Variable " << indexToBlock << " is blocked.\n";
 #endif // PP_DEBUG
@@ -364,14 +368,14 @@ void PC_bsf_JobDispatcher(
 				PD_shiftLength *= 2;
 				PD_numShiftsSameLength = 0;
 			}
-			/**#ifdef PP_DEBUG
-						cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
-						for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
-							cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
-						if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-						cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
-						cout << endl;
-			#endif // PP_DEBUG /**/
+#ifdef PP_DEBUG
+			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << endl;
+#endif // PP_DEBUG /**/
 			Vector_Copy(parameter->x, PD_basePoint);
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 			return;
@@ -398,38 +402,19 @@ void PC_bsf_JobDispatcher(
 		if (!PointInPolytope_s(parameter->x))
 			return;
 
-		objF = ObjectiveF(parameter->x);
-		if (objF + PP_EPS_OBJECTIVE < prevLandingObjVal) {
-#ifdef PP_DEBUG
-			cout << "New objective value is smaller than previous one!";
-#endif // PP_DEBUG /**/
-			if (PD_Gap < PP_GAP_MIN) {
-				PD_Gap = PP_GAP_MIN;
-#ifdef PP_DEBUG
-				cout << " PD_Gap < PP_GAP_MIN!" << endl;
-#endif // PP_DEBUG /**/
-			}
-			else if (PD_Gap > PP_GAP_MIN) {
-				PD_Gap /= 2;
-#ifdef PP_DEBUG
-				cout << "! => PD_Gap /= 2 == " << PD_Gap << endl;
-#endif // PP_DEBUG /**/
-			}
-		}
-
 #ifdef PP_DEBUG
 		cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
 		cout << "\t\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
-		cout << "\tF(t) = " << setw(PP_SETW) << objF;
+		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 		cout << endl;
 #endif // PP_DEBUG /**/
 
 		Vector_Copy(parameter->x, PD_basePoint);
 		//WriteTrace(PD_basePoint);
-		/*debug*/
+		/*debug
 		SavePoint(PD_basePoint, x0_File, t);
 		/*end debug*/
 
@@ -446,11 +431,12 @@ void PC_bsf_JobDispatcher(
 #endif/**/
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
-		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
-			return;
-		if (!PointInPolytope_s(parameter->x))
-			return;
-
+		/**if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
+			return;/**/
+		/**if (!PointInPolytope_s(parameter->x))
+			return;/**/
+		/**/if (!PD_pointIn)
+			return;/**/
 		// Preparations for moving inside the polytope
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_Copy(PD_objectiveUnitVector, PD_direction);
@@ -515,8 +501,8 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 #else
 	cout << "Map List is not Fragmented." << endl;
 #endif
-	cout << "Before conversion: tm =\t" << PP_M << "\tn = " << PP_N << endl;
-	cout << "After conversion:   m =\t" << PD_m << "\tn = " << PD_n << endl;
+	cout << "Before conversion: m =\t" << PP_M << "\tn = " << PP_N << endl;
+	cout << "After conversion:  m =\t" << PD_m << "\tn = " << PD_n << endl;
 	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Min Dir Length:\t" << PP_EPS_DIR_LENGTH << endl;
 	cout << "Eps Objective:\t\t" << PP_EPS_OBJECTIVE << endl;
@@ -524,8 +510,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Eps Zero Direction:\t" << PP_EPS_ZERO_DIR << endl;
 	cout << "Eps Zero Compare:\t" << PP_EPS_ZERO_COMPARE << endl;
 	cout << "Exact Obj Value:\t" << PP_EXACT_OBJ_VALUE << endl;
-	cout << "Gap min:\t\t" << PP_GAP_MIN << endl;
-	cout << "Gap max:\t\t" << PP_GAP_MAX << endl;
+	cout << "Gap Max:\t\t" << PP_GAP << endl;
 	cout << "Lambda:\t\t\t" << PP_LAMBDA << endl;
 	cout << "Obj Vector Length:\t" << PP_OBJECTIVE_VECTOR_LENGTH << endl;
 	cout << "Start Shift Lengt:\t" << PP_START_SHIFT_LENGTH << endl;
@@ -680,7 +665,7 @@ inline PT_float_T Vector_NormSquare(PT_vector_T x) {
 
 inline bool PointInHalfspace // If the point belongs to the Halfspace with prescigion of PD_Gap
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
-	return Vector_DotProductSquare(a, point) <= b + PD_Gap;
+	return Vector_DotProductSquare(a, point) <= b + PP_GAP;
 }
 
 inline bool PointInPolytope(PT_vector_T x) { // If the point belongs to the polytope
