@@ -212,8 +212,8 @@ void PC_bsf_JobDispatcher(
 		}
 		else {
 			// Preparations for finding a start point
-			PD_state = PP_STATE_FIND_START_POINT;
 			*job = PP_JOB_PSEUDOPOJECTION;
+			PD_state = PP_STATE_FIND_START_POINT;
 		}
 		break;
 	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
@@ -237,7 +237,7 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (PD_shiftLength >= PP_EPS_RELAX) {
+		if (PD_shiftLength >= PP_EPS_ZERO_COMPARE) {
 			PD_shiftLength /= 2;
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
@@ -260,11 +260,14 @@ void PC_bsf_JobDispatcher(
 #endif 
 		break;
 	case PP_STATE_DETERMINE_DIRECTION://------------------------- Determine Direction -----------------------------
-		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
+		if (!PD_pointIn)
 			return;
-		if (!PointInPolytope_s(parameter->x))
+		if (!PointInPolytope_s(parameter->x)) {
+			//
+			cout << "parameter->x not in polytope!";
+			*exit = true;
 			return;
-
+		}
 #ifdef PP_DEBUG
 		//		static int counterIter;
 		//		if (counterIter % PP_BSF_TRACE_COUNT == 0) {
@@ -397,10 +400,14 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG/**/
 		break;
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
-		if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
+		if (!PD_pointIn)
 			return;
-		if (!PointInPolytope_s(parameter->x))
+		if (!PointInPolytope_s(parameter->x)) {
+			//
+			cout << "parameter->x not in polytope!";
+			*exit = true;
 			return;
+		}
 
 #ifdef PP_DEBUG
 		cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
@@ -431,12 +438,14 @@ void PC_bsf_JobDispatcher(
 #endif/**/
 		break;
 	case PP_STATE_FIND_START_POINT://-------------------------- Finding a start point -----------------------------
-		/**if (Vector_Norm(PD_relaxationVector) >= PP_EPS_RELAX)
-			return;/**/
-		/**if (!PointInPolytope_s(parameter->x))
-			return;/**/
-		/**/if (!PD_pointIn)
-			return;/**/
+		if (!PD_pointIn) 
+			return;
+		if (!PointInPolytope_s(parameter->x)) {
+			//
+			cout << "parameter->x not in polytope!";
+			*exit = true;
+			return;
+		}
 		// Preparations for moving inside the polytope
 		Vector_Copy(parameter->x, PD_basePoint);
 		Vector_Copy(PD_objectiveUnitVector, PD_direction);
@@ -503,7 +512,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 #endif
 	cout << "Before conversion: m =\t" << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion:  m =\t" << PD_m << "\tn = " << PD_n << endl;
-	cout << "Eps Relax:\t\t" << PP_EPS_RELAX << endl;
 	cout << "Eps Min Dir Length:\t" << PP_EPS_DIR_LENGTH << endl;
 	cout << "Eps Objective:\t\t" << PP_EPS_OBJECTIVE << endl;
 	cout << "Eps Shift:\t\t" << PP_EPS_SHIFT << endl;
@@ -513,6 +521,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Gap Max:\t\t" << PP_GAP << endl;
 	cout << "Lambda:\t\t\t" << PP_LAMBDA << endl;
 	cout << "Obj Vector Length:\t" << PP_OBJECTIVE_VECTOR_LENGTH << endl;
+	cout << "Relax Vector Length:\t" << (PD_RELAX_VECTOR_LENGTH != 0 ? PD_RELAX_VECTOR_LENGTH : "native") << endl;
 	cout << "Start Shift Lengt:\t" << PP_START_SHIFT_LENGTH << endl;
 	cout << "Straight Trace:\t\t" << (PP_STRAIGHT_TRACE ? "true" : "false") << endl;
 
@@ -645,8 +654,13 @@ inline PT_float_T Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 }
 
 inline void Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T relaxationVector) {
-	for (int j = 0; j < PD_n; j++) {
-		relaxationVector[j] = PP_LAMBDA * sumOfProjections[j] / (double)numberOfProjections;
+	if (PD_RELAX_VECTOR_LENGTH == 0)
+		for (int j = 0; j < PD_n; j++)
+			relaxationVector[j] = PP_LAMBDA * sumOfProjections[j] / (double)numberOfProjections;
+	else {
+		double relaxNorm = Vector_Norm(sumOfProjections);
+		for (int j = 0; j < PD_n; j++)
+			relaxationVector[j] = PD_RELAX_VECTOR_LENGTH * sumOfProjections[j] / relaxNorm;
 	}
 }
 

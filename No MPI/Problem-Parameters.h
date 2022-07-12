@@ -133,10 +133,10 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
-#define PP_GAP					1E-2		// Maximum gap from polytope surface (not too small!!!)
+#define PP_GAP						1E-2	// Maximum gap from polytope surface (not too small!!!)
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
-#define PD_RELAX_VECTOR_LENGTH		1		// Length of Relaxation Vector
+#define PD_RELAX_VECTOR_LENGTH		0		// If 0 then native length
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
