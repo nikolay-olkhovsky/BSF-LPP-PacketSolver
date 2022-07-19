@@ -11,18 +11,16 @@ This source code has been produced with using BSF-skeleton
 #define MTX_FORMAT
 #define PP_PATH "C:/TEMP/"
 //#define PP_PATH ""
-//#define PP_PAUSE
 //=========================== Problem Parameters =========================
 /**#define PP_PROBLEM_NAME		"afiro"		 //==========================================
 #define PP_M 27		// Number of equations (number of rows in *.mtx)
 #define PP_N 51		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(w)|
-#define PP_EPS_SHIFT				1E-4	// Minimal shift
+#define PP_EPS_SHIFT				1E-4	// Minimal shift to stop motion
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE			1E-6	// Comparison precision
+#define PP_EPS_ZERO			1E-6	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		464.7531	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1		// Maximum distance from polytope
@@ -36,12 +34,11 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 56		// Number of equations (number of rows in *.mtx)
 #define PP_N 138	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-5	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			5E-2	// < |F(u)-F(w)|
-#define PP_EPS_SHIFT				1E-8	// Minimal shift
+#define PP_EPS_SHIFT				1E-8	// Minimal shift to stop motion
 #define PP_EPS_ZERO_DIR				1E-8	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EXACT_OBJ_VALUE		-225494.963	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-7	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1		// Maximum distance from polytope
@@ -55,12 +52,11 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 74		// Number of equations (number of rows in *.mtx)
 #define PP_N 114	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-3	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-4	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-5	// < |F(u)-F(w)|
-#define PP_EPS_SHIFT				1E-6	// Minimal shift
+#define PP_EPS_SHIFT				1E-6	// Minimal shift to stop motion
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE			1E-3	// Comparison precision
+#define PP_EPS_ZERO			1E-3	// Comparison precision
 #define PP_EXACT_OBJ_VALUE			30.812	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1E-2		// Maximum distance from polytope
@@ -74,12 +70,11 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 24		// Number of equations (number of rows in *.mtx)
 #define PP_N 1049	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-3	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-4	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-5	// < |F(u)-F(w)|
-#define PP_EPS_SHIFT				1E-6	// Minimal shift
+#define PP_EPS_SHIFT				1E-6	// Minimal shift to stop motion
 #define PP_EPS_ZERO_DIR				1E-4	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE			1E-3	// Comparison precision
+#define PP_EPS_ZERO			1E-3	// Comparison precision
 #define PP_EXACT_OBJ_VALUE			-9146.378	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1E-2		// Maximum distance from polytope
@@ -105,11 +100,10 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 50		// Number of equations (number of rows in *.mtx)
 #define PP_N 78	// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-6	// Precision for relaxation
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-4	// Minimal shift
+#define PP_EPS_SHIFT				1E-4	// Minimal shift to stop motion
 #define PP_EPS_ZERO_DIR					1E-6	// Accuracy of zero value for direction vector coordinates
-#define PP_EPS_ZERO_COMPARE				1E-6	// Comparison precision
+#define PP_EPS_ZERO				1E-6	// Comparison precision
 #define PP_EPS_DIR_LENGTH					1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(w)|
 #define PP_EXACT_OBJ_VALUE			-70		// Exact maximum value of objective function
@@ -126,17 +120,16 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 4		// Number of equations (number of rows in *.mtx)
 #define PP_N 7		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_SHIFT				1E-8	// Minimal shift to stop motion
+#define PP_EPS_ZERO					1E-8	// Zero comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
 #define PP_GAP						1E-2	// Maximum gap from polytope surface (not too small!!!)
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
-#define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
-#define PD_RELAX_VECTOR_LENGTH		0		// If 0 then native length
+#define PP_OBJECTIVE_VECTOR_LENGTH	1		// Length of Objective Vector
+#define PP_RELAX_VECTOR_LENGTH		2		// If 0 then native length
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/
@@ -147,10 +140,10 @@ This source code has been produced with using BSF-skeleton
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
+#define PP_EPS_SHIFT				1E-5	// Minimal shift to stop motion
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			40000	// Exact maximum value of objective function
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
@@ -162,12 +155,11 @@ This source code has been produced with using BSF-skeleton
 #define PP_M 5		// Number of equations (number of rows in *.mtx)
 #define PP_N 8		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
-#define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
+#define PP_EPS_SHIFT				1E-5	// Minimal shift to stop motion
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			59000	// Exact maximum value of objective function
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
@@ -181,10 +173,10 @@ This source code has been produced with using BSF-skeleton
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_GAP_MIN					1E-5	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
+#define PP_EPS_SHIFT				1E-5	// Minimal shift to stop motion
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			60000	// Exact maximum value of objective function
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
@@ -198,10 +190,10 @@ This source code has been produced with using BSF-skeleton
 //------------------------------------------------------------------
 #define PP_EPS_RELAX				1E-9	// Precision for relaxation
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
-#define PP_EPS_SHIFT				1E-5	// Minimal shift
+#define PP_EPS_SHIFT				1E-5	// Minimal shift to stop motion
 #define PP_EPS_DIR_LENGTH			1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-2	// < |F(u)-F(w)|
-#define PP_EPS_ZERO_COMPARE			1E-8	// Comparison precision
+#define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			-5000	// Exact maximum value of objective function
 #define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
@@ -238,3 +230,5 @@ This source code has been produced with using BSF-skeleton
 #define PP_STATE_LANDING				3
 #define PP_MOVE_INSIDE_POLYTOPE			4
 #define PP_STATE_FIND_START_POINT		5
+#define PP_STATE_SURFACING_FOR_DET_DIR	6
+#define PP_STATE_SURFACING_FOR_LANDING	7

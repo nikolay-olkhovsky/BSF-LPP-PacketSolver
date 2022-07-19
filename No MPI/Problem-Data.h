@@ -15,7 +15,6 @@ static int		PD_listSize;				// Curtrent Map&Reduce List Size
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_newInequalities;
-static double	PD_ObjectiveVectorLength;	// Length of objective vector
 static bool		PD_pointIn;					// Point is inside polytope
 static double	PD_shiftLength;				// Shift length
 static int		PD_state;					// State of Job Dispatcher (see PC_bsf_JobDispatcher)
@@ -30,7 +29,7 @@ static PT_vector_T PD_lo;					// Lower bound
 static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
 static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
 static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
-static PT_vector_T PD_relaxationVector;
+static PT_vector_T PD_unitRelaxVector;
 //========================== Input/Output ====================================
 static string PD_problemName;
 static string PD_solutionFile;
