@@ -286,9 +286,9 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG
 
 		DetermineDirection(parameter->x, exit, &repeat);
-		if (*exit || repeat)
+		if (*exit || repeat) {
 			return;
-
+		}
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
 		PD_numShiftsSameLength = 0;
@@ -434,8 +434,9 @@ void PC_bsf_JobDispatcher(
 		Surfacing(unitVectorToSurface, shiftBasePoint, parameter->x, &goOn);
 		if (goOn)
 			return;
+
 #ifdef PP_DEBUG
-		cout << "Surfacing\t\t\t\tu = ";
+		cout << "Relaxation\t\tw = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -444,7 +445,24 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG
 
 		DetermineDirection(parameter->x, exit, &repeat);
-		*job = PP_JOB_CHECK;
+		if (*exit || repeat)
+			return;
+
+		// Preparations for motion
+		PD_shiftLength = PP_START_SHIFT_LENGTH;
+		PD_numShiftsSameLength = 0;
+		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+#ifdef PP_DEBUG
+		cout << "--------- Motion on surface ------------\n";
+		cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
+		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
+		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+		cout << endl;
+#endif // PP_DEBUG
+		* job = PP_JOB_CHECK;
+		unitVectorToSurface = PD_direction;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
 #ifdef PP_DEBUG
 		cout << "--------- Motion on surface ------------\n";
