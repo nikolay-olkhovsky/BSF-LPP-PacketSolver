@@ -35,8 +35,8 @@ void PC_bsf_Init(bool* success) {
 	PD_MTX_File_so += PD_problemName;
 	PD_MTX_File_so += PP_MTX_POSTFIX_SO;
 
-	ObjectiveUnitVector(PD_objectiveUnitVector);
-	Vector_MultiplyByNumber(PD_objectiveUnitVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
+	ObjectiveUnitVector(PD_unitObjectiveVector);
+	Vector_MultiplyByNumber(PD_unitObjectiveVector, PP_OBJECTIVE_VECTOR_LENGTH, PD_objectiveVector);
 }
 
 void PC_bsf_SetListSize(int* listSize) {
@@ -179,7 +179,7 @@ void PC_bsf_JobDispatcher(
 	case PP_STATE_START://-------------------------- Start -----------------------------
 		PD_listSize = PD_m;
 		if (PointInPolytope_s(PD_basePoint)) {
-			Vector_Copy(PD_objectiveUnitVector, PD_direction);
+			Vector_Copy(PD_unitObjectiveVector, PD_direction);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 #ifdef PP_DEBUG
 			cout << "--------- Point in. Surfacing... ------------\n";
@@ -189,7 +189,7 @@ void PC_bsf_JobDispatcher(
 			if (PointInPolytope_s(parameter->x)) {
 				*job = PP_JOB_CHECK_S;
 				PD_state = PP_MOVE_INSIDE_POLYTOPE;
-				unitVectorToSurface = PD_objectiveUnitVector;
+				unitVectorToSurface = PD_unitObjectiveVector;
 				break;
 			}
 
@@ -224,7 +224,7 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		// Pushing base point into polytope
-		Vector_Copy(PD_objectiveUnitVector, parameter->x);
+		Vector_Copy(PD_unitObjectiveVector, parameter->x);
 		Vector_MultiplyEquals(parameter->x, -2 * PP_EPS_ZERO);
 		Vector_PlusEquals(PD_basePoint, parameter->x);
 
@@ -269,6 +269,7 @@ void PC_bsf_JobDispatcher(
 			Shift(shiftBasePoint, PD_direction, PD_shiftLength, parameter->x);
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_STATE_SURFACING_FOR_DET_DIR;
+			unitVectorToSurface = PD_direction;
 #ifdef PP_DEBUG
 			cout << "--------- Surfacing for determining direction ------------\n";
 #endif // PP_DEBUG
@@ -321,12 +322,6 @@ void PC_bsf_JobDispatcher(
 	case PP_STATE_LANDING://-------------------------- Landing -----------------------------
 		if (!PD_pointIn)
 			return;
-		/**if (!PointInPolytope_s(parameter->x)) {
-			//
-			cout << "parameter->x not in polytope!";
-			*exit = true;
-			return;
-		}/**/
 
 		Vector_Copy(parameter->x, PD_basePoint);
 
@@ -343,7 +338,7 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG /**/
 
 			// Preparations for surfacing
-			Vector_Copy(PD_objectiveUnitVector, PD_direction);
+			Vector_Copy(PD_unitObjectiveVector, PD_direction);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
@@ -423,14 +418,14 @@ void PC_bsf_JobDispatcher(
 
 		// Preparations for moving inside the polytope
 		Vector_Copy(parameter->x, PD_basePoint);
-		Vector_Copy(PD_objectiveUnitVector, PD_direction);
+		Vector_Copy(PD_unitObjectiveVector, PD_direction);
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
 		PD_numShiftsSameLength = 0;
 		Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
 
 		*job = PP_JOB_CHECK_S;
 		PD_state = PP_MOVE_INSIDE_POLYTOPE;
-		unitVectorToSurface = PD_objectiveUnitVector;
+		unitVectorToSurface = PD_unitObjectiveVector;
 #ifdef PP_DEBUG
 		cout << "--------- Moving inside polytope ------------\n";
 #endif // PP_DEBUG
