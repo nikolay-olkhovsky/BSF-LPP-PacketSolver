@@ -17,7 +17,6 @@ void		ObjectiveUnitVector(PT_vector_T objectiveUnitVector);
 bool		OpenTraceFile();
 bool		PointInHalfspace(PT_vector_T point, PT_vector_T a, PT_float_T b);
 bool		PointInHalfspace_s(PT_vector_T point, PT_vector_T a, PT_float_T b);
-bool		PointInPolytope(PT_vector_T x);
 bool		PointInPolytope_s(PT_vector_T x);
 void		DetermineDirection(PT_vector_T x, bool* exit, bool* repeat);
 void		ProblemOutput(double elapsedTime);

@@ -52,8 +52,10 @@ void PC_bsf_SetMapListElem(PT_bsf_mapElem_T* elem, int i) {
 void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int* success // 1 - reduceElem was produced successfully; 0 - otherwise
 ) {
 	*success = Vector_ProjectOnHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b, reduceElem->projection);
-//	reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
-	reduceElem->pointIn = !*success;
+	if (mapElem->a[PP_N] == 0)
+		reduceElem->pointIn = !*success;
+	else
+		reduceElem->pointIn = true;
 }
 
 // 1. Approximate check
@@ -112,6 +114,8 @@ void PC_bsf_ProcessResults(
 		return;
 	if (Vector_Relaxation(reduceResult->projection, reduceCounter, relaxVector))
 		Vector_PlusEquals(parameter->x, relaxVector);
+	if (PP_RELAX_VECTOR_LENGTH > 0)
+		PD_pointIn = PointInPolytope_s(parameter->x);
 }
 
 // 1. Movement on Polytope  ========================================================
@@ -182,7 +186,7 @@ void PC_bsf_JobDispatcher(
 			Vector_Copy(PD_unitObjectiveVector, PD_direction);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 #ifdef PP_DEBUG
-			cout << "--------- Point in. Surfacing... ------------\n";
+			cout << "--------- Point in => Surfacing ------------\n";
 #endif
 			PD_numShiftsSameLength = 0;
 			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
@@ -244,13 +248,6 @@ void PC_bsf_JobDispatcher(
 		if (!PD_pointIn)
 			return;
 
-		/**if (!PointInPolytope_s(parameter->x)) {
-			//
-			cout << "parameter->x not in polytope!";
-			*exit = true;
-			return;
-		}/**/
-
 		if (PP_RELAX_VECTOR_LENGTH > 0) {
 #ifdef PP_DEBUG
 			cout << "Relaxation\t\tx = ";
@@ -286,9 +283,9 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG
 
 		DetermineDirection(parameter->x, exit, &repeat);
-		if (*exit || repeat) {
+		if (*exit || repeat) 
 			return;
-		}
+		
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
 		PD_numShiftsSameLength = 0;
@@ -445,8 +442,15 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG
 
 		DetermineDirection(parameter->x, exit, &repeat);
-		if (*exit || repeat)
+		if (*exit || repeat) {
+			// Preparations for determining direction
+			Vector_Copy(PD_basePoint, parameter->x);
+			Vector_PlusEquals(parameter->x, PD_objectiveVector);
+			*job = PP_JOB_PSEUDOPOJECTION;
+			PD_state = PP_STATE_DETERMINE_DIRECTION;
+			PD_numDetDir = 0;
 			return;
+		}
 
 		// Preparations for motion
 		PD_shiftLength = PP_START_SHIFT_LENGTH;
@@ -464,9 +468,6 @@ void PC_bsf_JobDispatcher(
 		* job = PP_JOB_CHECK;
 		unitVectorToSurface = PD_direction;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
-#ifdef PP_DEBUG
-		cout << "--------- Motion on surface ------------\n";
-#endif // PP_DEBUG
 		break;
 	case PP_STATE_SURFACING_FOR_LANDING: //---------------------- Surfacing for determining direction -----------------------------
 		Surfacing(unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
@@ -698,22 +699,18 @@ inline bool PointInHalfspace // If the point belongs to the Halfspace with presc
 	return Vector_DotProductSquare(a, point) <= b + PP_GAP;
 }
 
-inline bool PointInPolytope(PT_vector_T x) { // If the point belongs to the polytope
-	for (int i = 0; i < PD_m; i++)
-		if (!PointInHalfspace(x, PD_A[i], PD_b[i]))
-			return false;
-	return true;
-}
-
 inline bool PointInHalfspace_s // If the point belongs to the Halfspace with prescigion of PP_EPS_ZERO
 (PT_vector_T point, PT_vector_T a, PT_float_T b) {
 	return Vector_DotProductSquare(a, point) <= b + PP_EPS_ZERO;
 }
 
 inline bool PointInPolytope_s(PT_vector_T x) { // If the point belongs to the polytope with prescigion of PP_EPS_ZERO
-	for (int i = 0; i < PD_m; i++)
+	for (int i = 0; i < PD_m; i++) {
+		if (PD_A[i][PP_N] == 1)
+			continue;
 		if (!PointInHalfspace_s(x, PD_A[i], PD_b[i]))
 			return false;
+	}
 	return true;
 }
 
@@ -1510,6 +1507,7 @@ inline void DetermineDirection(PT_vector_T x, bool* exit, bool* repeat) {
 		sign = (PD_c[PD_objI[indexToBlock]] >= 0 ? 1 : -1);
 		if (sign * PD_direction[PD_objI[indexToBlock]] <= 0 && indexToBlock < PD_n - 1) {
 			PD_A[PD_m][PD_objI[indexToBlock]] = -sign;
+			PD_A[PD_m][PP_N] = 1;
 			PD_b[PD_m] = sign * (PP_EPS_ZERO - PD_basePoint[PD_objI[indexToBlock]]);
 			//
 			//
