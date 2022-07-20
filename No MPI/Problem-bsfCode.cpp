@@ -60,12 +60,18 @@ void PC_bsf_MapF(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T* reduceElem, int
 
 // 1. Approximate check
 void PC_bsf_MapF_1(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_1* reduceElem, int* success) {
-	reduceElem->pointIn = PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
+	if (mapElem->a[PP_N] == 0)
+		reduceElem->pointIn = PointInHalfspace(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
+	else
+		reduceElem->pointIn = true;
 }
 
 // 2. Exact check
 void PC_bsf_MapF_2(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_2* reduceElem, int* success) {
-	reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
+	if (mapElem->a[PP_N] == 0)
+		reduceElem->pointIn = PointInHalfspace_s(BSF_sv_parameter.x, mapElem->a, *mapElem->b);
+	else
+		reduceElem->pointIn = true;
 }
 
 void PC_bsf_MapF_3(PT_bsf_mapElem_T* mapElem, PT_bsf_reduceElem_T_3* reduceElem, int* success) {
@@ -264,9 +270,9 @@ void PC_bsf_JobDispatcher(
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			PD_numShiftsSameLength = 0;
 			Shift(shiftBasePoint, PD_direction, PD_shiftLength, parameter->x);
+			unitVectorToSurface = PD_direction;
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_STATE_SURFACING_FOR_DET_DIR;
-			unitVectorToSurface = PD_direction;
 #ifdef PP_DEBUG
 			cout << "--------- Surfacing for determining direction ------------\n";
 #endif // PP_DEBUG
@@ -335,10 +341,13 @@ void PC_bsf_JobDispatcher(
 #endif // PP_DEBUG /**/
 
 			// Preparations for surfacing
-			Vector_Copy(PD_unitObjectiveVector, PD_direction);
+			Vector_Copy(parameter->x, shiftBasePoint);
+			Vector_Copy(PD_unitRelaxVector, PD_direction);
+			Vector_MultiplyEquals(PD_direction, -1);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			PD_numShiftsSameLength = 0;
-			Shift(PD_basePoint, PD_direction, PD_shiftLength, parameter->x);
+			Shift(shiftBasePoint, PD_direction, PD_shiftLength, parameter->x);
+			unitVectorToSurface = PD_direction;
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_STATE_SURFACING_FOR_LANDING;
 #ifdef PP_DEBUG
@@ -531,7 +540,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "Eps Zero Compare:\t" << PP_EPS_ZERO << endl;
 	cout << "Exact Obj Value:\t" << PP_EXACT_OBJ_VALUE << endl;
 	cout << "Gap Max:\t\t" << PP_GAP << endl;
-	cout << "Lambda:\t\t\t" << PP_LAMBDA << endl;
 	cout << "Obj Vector Length:\t" << PP_OBJECTIVE_VECTOR_LENGTH << endl;
 	cout << "Relax Vector Length:\t" << PP_RELAX_VECTOR_LENGTH << endl;
 	cout << "Start Shift Lengt:\t" << PP_START_SHIFT_LENGTH << endl;
@@ -668,7 +676,7 @@ inline PT_float_T Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 inline bool Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T relaxationVector) {
 	if (PP_RELAX_VECTOR_LENGTH == 0) {
 		for (int j = 0; j < PD_n; j++)
-			relaxationVector[j] = PP_LAMBDA * sumOfProjections[j] / (double)numberOfProjections;
+			relaxationVector[j] = sumOfProjections[j] / (double)numberOfProjections;
 		return true;
 	}
 	double relaxNorm = Vector_Norm(sumOfProjections);

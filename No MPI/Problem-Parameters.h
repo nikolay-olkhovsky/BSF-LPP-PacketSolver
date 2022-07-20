@@ -24,7 +24,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EXACT_OBJ_VALUE		464.7531	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimal distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1		// Maximum distance from polytope
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	1000		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
@@ -42,7 +41,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EXACT_OBJ_VALUE		-225494.963	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-7	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1		// Maximum distance from polytope
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	5E-4	// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
@@ -60,7 +58,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EXACT_OBJ_VALUE			30.812	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1E-2		// Maximum distance from polytope
-#define PP_LAMBDA					10		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	1E-1	// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			false	// straightens the trace, but can lead to an incorrect solution
@@ -78,7 +75,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EXACT_OBJ_VALUE			-9146.378	// Exact maximum value of objective function
 #define PP_GAP_MIN					1E-2	// Minimum distance to polytope (not too small!!!)
 #define PP_GAP_MAX					1E-2		// Maximum distance from polytope
-#define PP_LAMBDA					10		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	1E-1	// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		1		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
@@ -107,7 +103,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_DIR_LENGTH					1E-6	// Minimal Length of Direction Vector
 #define PP_EPS_OBJECTIVE			1E-4	// < |F(u)-F(w)|
 #define PP_EXACT_OBJ_VALUE			-70		// Exact maximum value of objective function
-#define PP_LAMBDA					1.99	// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	45		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
@@ -127,7 +122,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
 #define PP_GAP						1E-2	// Maximum gap from polytope surface (not too small!!!)
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	1		// Length of Objective Vector
 #define PP_RELAX_VECTOR_LENGTH		2		// If 0 then native length
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
@@ -146,7 +140,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			40000	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
@@ -162,7 +155,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			59000	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
@@ -179,7 +171,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			60000	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
@@ -196,7 +187,6 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO			1E-8	// Comparison precision
 #define PP_EPS_ZERO_DIR				1E-6	// Accuracy of zero value for direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			-5000	// Exact maximum value of objective function
-#define PP_LAMBDA					1		// 0<PP_LAMBDA<2 relaxation speed
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 //------------------------------------------------------------------/**/
