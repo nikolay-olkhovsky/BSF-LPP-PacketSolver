@@ -123,7 +123,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EXACT_OBJ_VALUE			55000	// Exact maximum value of objective function
 #define PP_GAP						1E-2	// Maximum gap from polytope surface (not too small!!!)
 #define PP_OBJECTIVE_VECTOR_LENGTH	1		// Length of Objective Vector
-#define PP_RELAX_VECTOR_LENGTH		1		// If 0 then native length
+#define PP_RELAX_VECTOR_LENGTH		2		// If 0 then native length
 #define PP_START_SHIFT_LENGTH		5		// Start length of shift vector
 #define PP_STRAIGHT_TRACE			true	// straightens the trace, but can lead to an incorrect solution
 //------------------------------------------------------------------/**/

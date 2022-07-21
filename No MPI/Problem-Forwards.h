@@ -24,7 +24,7 @@ bool		SavePoint(PT_vector_T x, const char* filename, double elapsedTime);
 void		Shift(PT_vector_T basePoint, PT_vector_T direction, PT_float_T siftLength, PT_vector_T endPoint);
 void		SkipComments(FILE* stream);
 void		SortObjVarI();
-void		Surfacing(PT_vector_T unitVectorToSurface, PT_vector_T basePoint, PT_vector_T x, bool* goOn);
+void		Surfacing(PT_vector_T ptr_unitVectorToSurface, PT_vector_T basePoint, PT_vector_T x, bool* goOn);
 void		Vector_Addition(PT_vector_T x, PT_vector_T y, PT_vector_T z);
 void		Vector_Copy(PT_vector_T fromPoint, PT_vector_T toPoint);
 void		Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y);

@@ -179,7 +179,7 @@ void PC_bsf_JobDispatcher(
 	double t
 ) {
 	static PT_vector_T shiftBasePoint;
-	static double* unitVectorToSurface;
+	static double* ptr_unitVectorToSurface;
 	const char* traceFile = PD_MTX_File_tr.c_str();
 	const char* x0_File = PD_MTX_File_x0.c_str();
 	bool goOn, repeat;
@@ -199,7 +199,7 @@ void PC_bsf_JobDispatcher(
 			if (PointInPolytope_s(parameter->x)) {
 				*job = PP_JOB_CHECK_S;
 				PD_state = PP_MOVE_INSIDE_POLYTOPE;
-				unitVectorToSurface = PD_unitObjectiveVector;
+				ptr_unitVectorToSurface = PD_unitObjectiveVector;
 				break;
 			}
 
@@ -229,7 +229,7 @@ void PC_bsf_JobDispatcher(
 		break;
 
 	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
-		Surfacing(unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
+		Surfacing(ptr_unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
 		if (goOn)
 			return;
 
@@ -264,17 +264,22 @@ void PC_bsf_JobDispatcher(
 			cout << endl;
 #endif // PP_DEBUG
 			// Preparations for surfacing
+			Vector_MultiplyByNumber(PD_unitRelaxVector, -1, PD_direction);
 			Vector_Copy(parameter->x, shiftBasePoint);
-			Vector_Copy(PD_unitRelaxVector, PD_direction);
-			Vector_MultiplyEquals(PD_direction, -1);
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			PD_numShiftsSameLength = 0;
-			Shift(shiftBasePoint, PD_direction, PD_shiftLength, parameter->x);
-			unitVectorToSurface = PD_direction;
+			ptr_unitVectorToSurface = PD_direction;
+			Shift(shiftBasePoint, ptr_unitVectorToSurface, PD_shiftLength, parameter->x);
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_STATE_SURFACING_FOR_DET_DIR;
 #ifdef PP_DEBUG
 			cout << "--------- Surfacing for determining direction ------------\n";
+			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << endl;
 #endif // PP_DEBUG
 			break;
 		}
@@ -306,11 +311,11 @@ void PC_bsf_JobDispatcher(
 		cout << endl;
 #endif // PP_DEBUG
 		*job = PP_JOB_CHECK;
-		unitVectorToSurface = PD_direction;
+		ptr_unitVectorToSurface = PD_direction;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
 		break;
 	case PP_STATE_MOVE_AND_CHECK://-------------------------- t: Move and check -----------------------------
-		Surfacing(unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
+		Surfacing(ptr_unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
 		if (goOn)
 			return;
 
@@ -347,7 +352,7 @@ void PC_bsf_JobDispatcher(
 			PD_shiftLength = PP_START_SHIFT_LENGTH;
 			PD_numShiftsSameLength = 0;
 			Shift(shiftBasePoint, PD_direction, PD_shiftLength, parameter->x);
-			unitVectorToSurface = PD_direction;
+			ptr_unitVectorToSurface = PD_direction;
 			*job = PP_JOB_CHECK_S;
 			PD_state = PP_STATE_SURFACING_FOR_LANDING;
 #ifdef PP_DEBUG
@@ -431,13 +436,13 @@ void PC_bsf_JobDispatcher(
 
 		*job = PP_JOB_CHECK_S;
 		PD_state = PP_MOVE_INSIDE_POLYTOPE;
-		unitVectorToSurface = PD_unitObjectiveVector;
+		ptr_unitVectorToSurface = PD_unitObjectiveVector;
 #ifdef PP_DEBUG
 		cout << "--------- Moving inside polytope ------------\n";
 #endif // PP_DEBUG
 		break;
 	case PP_STATE_SURFACING_FOR_DET_DIR: //---------------------- Surfacing for determining direction -----------------------------
-		Surfacing(unitVectorToSurface, shiftBasePoint, parameter->x, &goOn);
+		Surfacing(ptr_unitVectorToSurface, shiftBasePoint, parameter->x, &goOn);
 		if (goOn)
 			return;
 
@@ -452,13 +457,18 @@ void PC_bsf_JobDispatcher(
 
 		DetermineDirection(parameter->x, exit, &repeat);
 		if (*exit || repeat) {
-			// Preparations for determining direction
-			Vector_Copy(PD_basePoint, parameter->x);
-			Vector_PlusEquals(parameter->x, PD_objectiveVector);
-			*job = PP_JOB_PSEUDOPOJECTION;
-			PD_state = PP_STATE_DETERMINE_DIRECTION;
-			PD_numDetDir = 0;
-			return;
+			if (repeat) {
+				// Preparations for determining direction
+				Vector_Copy(PD_basePoint, parameter->x);
+				Vector_PlusEquals(parameter->x, PD_objectiveVector);
+				PD_numDetDir = 0;
+				*job = PP_JOB_PSEUDOPOJECTION;
+				PD_state = PP_STATE_DETERMINE_DIRECTION;
+#ifdef PP_DEBUG
+				cout << "--------- Repeat determination of direction ------------\n";
+#endif // PP_DEBUG
+			}
+			break;
 		}
 
 		// Preparations for motion
@@ -475,11 +485,11 @@ void PC_bsf_JobDispatcher(
 		cout << endl;
 #endif // PP_DEBUG
 		* job = PP_JOB_CHECK;
-		unitVectorToSurface = PD_direction;
+		ptr_unitVectorToSurface = PD_direction;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
 		break;
 	case PP_STATE_SURFACING_FOR_LANDING: //---------------------- Surfacing for determining direction -----------------------------
-		Surfacing(unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
+		Surfacing(ptr_unitVectorToSurface, PD_basePoint, parameter->x, &goOn);
 		if (goOn)
 			return;
 
@@ -787,7 +797,7 @@ inline void Vector_ResetToZero(PT_vector_T x) {  // x = 0
 	for (int j = 0; j < PD_n; j++) x[j] = 0;
 }
 
-inline void Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y) {  // x = x/r
+inline void Vector_DivideByNumber(PT_vector_T x, double r, PT_vector_T y) {  // y = x/r
 	for (int j = 0; j < PD_n; j++)
 		y[j] = x[j] / r;
 }
@@ -1423,7 +1433,7 @@ inline bool OpenTraceFile() {
 	return true;
 }
 
-inline void Surfacing(PT_vector_T unitVectorToSurface, PT_vector_T basePoint, PT_vector_T x, bool *goOn)
+inline void Surfacing(PT_vector_T ptr_unitVectorToSurface, PT_vector_T basePoint, PT_vector_T x, bool *goOn)
 { //	Ascent to the surface of the polytope
 	if (PD_pointIn) {
 		PD_numDetDir = 0;
@@ -1433,7 +1443,7 @@ inline void Surfacing(PT_vector_T unitVectorToSurface, PT_vector_T basePoint, PT
 			PD_numShiftsSameLength = 0;
 		}
 		Vector_Copy(x, basePoint);
-		Shift(basePoint, unitVectorToSurface, PD_shiftLength, x);
+		Shift(basePoint, ptr_unitVectorToSurface, PD_shiftLength, x);
 		*goOn = true;
 #ifdef PP_DEBUG
 		cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
@@ -1453,7 +1463,7 @@ inline void Surfacing(PT_vector_T unitVectorToSurface, PT_vector_T basePoint, PT
 
 	PD_shiftLength /= 2;
 	PD_numShiftsSameLength = 0;
-	Shift(basePoint, unitVectorToSurface, PD_shiftLength, x);
+	Shift(basePoint, ptr_unitVectorToSurface, PD_shiftLength, x);
 	*goOn = true;
 #ifdef PP_DEBUG
 	cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
@@ -1527,11 +1537,8 @@ inline void DetermineDirection(PT_vector_T x, bool* exit, bool* repeat) {
 #endif // PP_DEBUG
 			PD_numDetDir = 0;
 			indexToBlock++;
-			if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_DIR) {
-				Vector_Copy(PD_basePoint, x);
-				Vector_PlusEquals(x, PD_objectiveVector);
+			if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_DIR) 
 				*repeat = true;
-			}
 		}
 	}
 }
