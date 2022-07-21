@@ -233,10 +233,10 @@ void PC_bsf_JobDispatcher(
 		if (goOn)
 			return;
 
-		// Pushing base point into polytope
+		/** // Pushing base point into polytope
 		Vector_Copy(PD_unitObjectiveVector, parameter->x);
 		Vector_MultiplyEquals(parameter->x, -2 * PP_EPS_ZERO);
-		Vector_PlusEquals(PD_basePoint, parameter->x);
+		Vector_PlusEquals(PD_basePoint, parameter->x);/**/
 
 		/*debug* WriteTrace(PD_basePoint);/**/
 
@@ -280,7 +280,7 @@ void PC_bsf_JobDispatcher(
 		}
 
 #ifdef PP_DEBUG
-		cout << "Relaxation\t\tw = ";
+		cout << "\t\t\tw = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -442,7 +442,7 @@ void PC_bsf_JobDispatcher(
 			return;
 
 #ifdef PP_DEBUG
-		cout << "Relaxation\t\tw = ";
+		cout << "\t\t\tw = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -484,7 +484,7 @@ void PC_bsf_JobDispatcher(
 			return;
 
 #ifdef PP_DEBUG
-		cout << "Surfacing\t\t\t\tu = ";
+		cout << "Surfacing\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -1516,7 +1516,8 @@ inline void DetermineDirection(PT_vector_T x, bool* exit, bool* repeat) {
 		if (sign * PD_direction[PD_objI[indexToBlock]] <= 0 && indexToBlock < PD_n - 1) {
 			PD_A[PD_m][PD_objI[indexToBlock]] = -sign;
 			PD_A[PD_m][PP_N] = 1;
-			PD_b[PD_m] = sign * (PP_EPS_ZERO - PD_basePoint[PD_objI[indexToBlock]]);
+			//PD_b[PD_m] = sign * (PP_EPS_ZERO - PD_basePoint[PD_objI[indexToBlock]]);
+			PD_b[PD_m] = -sign * PD_basePoint[PD_objI[indexToBlock]];
 			//
 			//
 			PD_m++;
