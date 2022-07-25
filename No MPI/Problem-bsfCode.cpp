@@ -20,6 +20,7 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_listSize = PP_MM;
+	PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 
 	//
 	*success = LoadMatrixFormat();
@@ -120,7 +121,7 @@ void PC_bsf_ProcessResults(
 		return;
 	if (Vector_Relaxation(reduceResult->projection, reduceCounter, relaxVector))
 		Vector_PlusEquals(parameter->x, relaxVector);
-	if (PP_RELAX_VECTOR_LENGTH > 0)
+	if (PD_relaxVectorLength > 0)
 		PD_pointIn = PointInPolytope_s(parameter->x);
 }
 
@@ -204,11 +205,12 @@ void PC_bsf_JobDispatcher(
 			}
 
 #ifdef PP_DEBUG
-			cout << "Start:\t\tu0 =";
+			cout << "Start:\t\t\tu0 =";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << PD_basePoint[PD_objI[j]];
 			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(PD_basePoint);
+			cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 			cout << endl;
 #endif // PP_DEBUG
 			// Preparations for determining direction
@@ -217,6 +219,7 @@ void PC_bsf_JobDispatcher(
 			*job = PP_JOB_PSEUDOPOJECTION;
 			PD_state = PP_STATE_DETERMINE_DIRECTION;
 			PD_numDetDir = 0;
+			PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 #ifdef PP_DEBUG
 			cout << "--------- Determine Direction ------------\n";
 #endif
@@ -226,6 +229,7 @@ void PC_bsf_JobDispatcher(
 		// Preparations for finding a start point
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_FIND_START_POINT;
+		PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 		break;
 
 	case PP_MOVE_INSIDE_POLYTOPE: //--------------------- Moving inside the polytope ----------------------------
@@ -254,13 +258,14 @@ void PC_bsf_JobDispatcher(
 		if (!PD_pointIn)
 			return;
 
-		if (PP_RELAX_VECTOR_LENGTH > 0) {
+		if (PD_relaxVectorLength > 0) {
 #ifdef PP_DEBUG
 			cout << "Relaxation\t\tx = ";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 			cout << endl;
 #endif // PP_DEBUG
 			// Preparations for surfacing
@@ -270,8 +275,6 @@ void PC_bsf_JobDispatcher(
 			PD_numShiftsSameLength = 0;
 			ptr_unitVectorToSurface = PD_direction;
 			Shift(shiftBasePoint, ptr_unitVectorToSurface, PD_shiftLength, parameter->x);
-			*job = PP_JOB_CHECK_S;
-			PD_state = PP_STATE_SURFACING_FOR_DET_DIR;
 #ifdef PP_DEBUG
 			cout << "--------- Surfacing for determining direction ------------\n";
 			cout << "Sift = " << setw(PP_SETW) << PD_shiftLength << "\tt = ";
@@ -281,6 +284,8 @@ void PC_bsf_JobDispatcher(
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 			cout << endl;
 #endif // PP_DEBUG
+			*job = PP_JOB_CHECK_S;
+			PD_state = PP_STATE_SURFACING_FOR_DET_DIR;
 			break;
 		}
 
@@ -320,9 +325,10 @@ void PC_bsf_JobDispatcher(
 			return;
 
 		// Preparations for landing
-		Vector_Copy(PD_basePoint, parameter->x);
+		//Vector_Copy(PD_basePoint, parameter->x);
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_LANDING;
+		PD_relaxVectorLength = 0;
 #ifdef PP_DEBUG
 		cout << "--------- Landing ------------\n";
 #endif // PP_DEBUG/**/
@@ -333,7 +339,7 @@ void PC_bsf_JobDispatcher(
 
 		Vector_Copy(parameter->x, PD_basePoint);
 
-		if (PP_RELAX_VECTOR_LENGTH > 0) {
+		if (PD_relaxVectorLength > 0) {
 
 #ifdef PP_DEBUG
 			cout << "Iter # " << BSF_sv_iterCounter << ". Elapsed time: " << round(t) << endl;
@@ -342,6 +348,7 @@ void PC_bsf_JobDispatcher(
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 			cout << endl;
 #endif // PP_DEBUG /**/
 
@@ -372,6 +379,7 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+		cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 		cout << endl;
 #endif // PP_DEBUG /**/
 
@@ -380,6 +388,7 @@ void PC_bsf_JobDispatcher(
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
 		PD_numDetDir = 0;
+		PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 #ifdef PP_DEBUG
 		cout << "--------- Determining direction ------------\n";
 #endif
@@ -395,7 +404,7 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
-		if (PP_RELAX_VECTOR_LENGTH == 0) {
+		if (PD_relaxVectorLength == 0) {
 
 #ifdef PP_DEBUG
 			cout << "Relaxation\t\tu0= ";
@@ -403,6 +412,7 @@ void PC_bsf_JobDispatcher(
 				cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 			cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+			cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 			cout << endl;
 #endif // PP_DEBUG
 
@@ -412,6 +422,7 @@ void PC_bsf_JobDispatcher(
 			*job = PP_JOB_PSEUDOPOJECTION;
 			PD_state = PP_STATE_DETERMINE_DIRECTION;
 			PD_numDetDir = 0;
+			PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH; 
 #ifdef PP_DEBUG
 			cout << "--------- Determining direction ------------\n";
 #endif // PP_DEBUG
@@ -424,6 +435,7 @@ void PC_bsf_JobDispatcher(
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+		cout << "\t\tPD_relaxVectorLength = " << PD_relaxVectorLength;
 		cout << endl;
 #endif // PP_DEBUG
 
@@ -462,12 +474,27 @@ void PC_bsf_JobDispatcher(
 				Vector_Copy(PD_basePoint, parameter->x);
 				Vector_PlusEquals(parameter->x, PD_objectiveVector);
 				PD_numDetDir = 0;
-				*job = PP_JOB_PSEUDOPOJECTION;
-				PD_state = PP_STATE_DETERMINE_DIRECTION;
 #ifdef PP_DEBUG
 				cout << "--------- Repeat determination of direction ------------\n";
+
+				cout << "\t\t\tu = ";
+				for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+					cout << setw(PP_SETW) << PD_basePoint[PD_objI[j]];
+				if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+				cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(PD_basePoint);
+				cout << endl;
+
+				cout << "\t\t\tx = ";
+				for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
+					cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
+				if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
+				cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
+				cout << endl;
 #endif // PP_DEBUG
 			}
+			*job = PP_JOB_PSEUDOPOJECTION;
+			PD_state = PP_STATE_DETERMINE_DIRECTION;
+			PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 			break;
 		}
 
@@ -484,8 +511,8 @@ void PC_bsf_JobDispatcher(
 		cout << "\tF(t) = " << setw(PP_SETW) << ObjectiveF(parameter->x);
 		cout << endl;
 #endif // PP_DEBUG
-		* job = PP_JOB_CHECK;
 		ptr_unitVectorToSurface = PD_direction;
+		* job = PP_JOB_CHECK;
 		PD_state = PP_STATE_MOVE_AND_CHECK;
 		break;
 	case PP_STATE_SURFACING_FOR_LANDING: //---------------------- Surfacing for determining direction -----------------------------
@@ -494,7 +521,7 @@ void PC_bsf_JobDispatcher(
 			return;
 
 #ifdef PP_DEBUG
-		cout << "Surfacing\t\tu = ";
+		cout << "\t\t\tu = ";
 		for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
 			cout << setw(PP_SETW) << parameter->x[PD_objI[j]];
 		if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -512,6 +539,7 @@ void PC_bsf_JobDispatcher(
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
 		PD_numDetDir = 0;
+		PD_relaxVectorLength = PP_RELAX_VECTOR_LENGTH;
 #ifdef PP_DEBUG
 		cout << "--------- Determining direction ------------\n";
 #endif // PP_DEBUG
@@ -684,7 +712,7 @@ inline PT_float_T Vector_DotProductSquare(PT_vector_T x, PT_vector_T y) {
 }
 
 inline bool Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjections, PT_vector_T relaxationVector) {
-	if (PP_RELAX_VECTOR_LENGTH == 0) {
+	if (PD_relaxVectorLength == 0) {
 		for (int j = 0; j < PD_n; j++)
 			relaxationVector[j] = sumOfProjections[j] / (double)numberOfProjections;
 		return true;
@@ -693,8 +721,8 @@ inline bool Vector_Relaxation(PT_vector_T sumOfProjections, int numberOfProjecti
 	if(relaxNorm == 0)
 		return false;
 	for (int j = 0; j < PD_n; j++) {
+		relaxationVector[j] = PD_relaxVectorLength * PD_unitRelaxVector[j];
 		PD_unitRelaxVector[j] = sumOfProjections[j] / relaxNorm;
-		relaxationVector[j] = PP_RELAX_VECTOR_LENGTH * PD_unitRelaxVector[j];
 	}
 	return true;
 }
@@ -1499,7 +1527,7 @@ inline void DetermineDirection(PT_vector_T x, bool* exit, bool* repeat) {
 	if (ObjectiveF(x) <= ObjectiveF(PD_basePoint) - PP_EPS_OBJECTIVE) {
 		cout << setw(PP_SETW) << "F(u) = " << ObjectiveF(PD_basePoint) << " >= F(w) = "
 			<< ObjectiveF(x) << endl;
-		cout << "Maybe, you should decreas PP_OBJECTIVE_VECTOR_LENGTH.\n";
+		cout << "Maybe, you should increas PP_OBJECTIVE_VECTOR_LENGTH.\n";
 		*exit = true;
 		return;
 	}
@@ -1513,32 +1541,41 @@ inline void DetermineDirection(PT_vector_T x, bool* exit, bool* repeat) {
 
 	Vector_EpsZero(PD_direction);
 
-#ifdef PP_DEBUG //----------------------------------------------//
-	cout << "\t\t\tD = ";									//
-	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)	//
-		cout << setw(PP_SETW) << PD_direction[PD_objI[j]];	//
-	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";			//
-	cout << endl;											//
-#endif // PP_DEBUG ---------------------------------------------//
-
 	if (PP_STRAIGHT_TRACE) {
 		sign = (PD_c[PD_objI[indexToBlock]] >= 0 ? 1 : -1);
 		if (sign * PD_direction[PD_objI[indexToBlock]] <= 0 && indexToBlock < PD_n - 1) {
 			PD_A[PD_m][PD_objI[indexToBlock]] = -sign;
 			PD_A[PD_m][PP_N] = 1;
-			//PD_b[PD_m] = sign * (PP_EPS_ZERO - PD_basePoint[PD_objI[indexToBlock]]);
-			PD_b[PD_m] = -sign * PD_basePoint[PD_objI[indexToBlock]];
+			PD_b[PD_m] = sign * (PP_EPS_ZERO - PD_basePoint[PD_objI[indexToBlock]]);
 			//
 			//
 			PD_m++;
 			PD_listSize = PD_m;
-#ifdef PP_DEBUG
-			cout << "Variable " << indexToBlock << " is blocked.\n";
-#endif // PP_DEBUG
 			PD_numDetDir = 0;
 			indexToBlock++;
-			if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_DIR) 
-				*repeat = true;
+
+			/**/if (fabs(PD_direction[PD_objI[indexToBlock - 1]]) > PP_EPS_ZERO_DIR)
+				*repeat = true;/**/
+
+#ifdef PP_DEBUG
+			cout << "Variable " << indexToBlock << " is blocked.\n";
+			cout << "\t\t\tD = ";										//
+			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)		//
+				cout << setw(PP_SETW) << PD_direction[PD_objI[j]];		//
+			if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";				//
+			cout << endl;												//
+#endif // PP_DEBUG
 		}
 	}
+
+	for (int j = 0; j < indexToBlock; j++)
+		PD_direction[PD_objI[j]] = 0;
+
+#ifdef PP_DEBUG //----------------------------------------------//
+	cout << "\t\t\tD = ";										//
+	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)		//
+		cout << setw(PP_SETW) << PD_direction[PD_objI[j]];		//
+	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";				//
+	cout << endl;												//
+#endif // PP_DEBUG ---------------------------------------------//
 }
