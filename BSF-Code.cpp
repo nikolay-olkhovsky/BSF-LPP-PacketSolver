@@ -15,9 +15,7 @@ int main(int argc, char* argv[]) {
 	char emptystring[] = "";
 	char* message = emptystring;
 	unsigned success;
-
 	BC_MpiRun();
-
 	BD_success = true;
 	PC_bsf_Init(&BD_success);
 	MPI_Allreduce(&BD_success, &success, 1, MPI_UNSIGNED, MPI_LAND, MPI_COMM_WORLD);
@@ -31,10 +29,11 @@ int main(int argc, char* argv[]) {
 	BC_Init(&BD_success);
 	MPI_Allreduce(&BD_success, &success, 1, MPI_UNSIGNED, MPI_LAND, MPI_COMM_WORLD);
 	if (!success) {
-		if (BD_rank == BD_masterRank) cout << "Error: BC_Init failed (not enough memory)!" << endl;
+		if (BD_rank == BD_masterRank) 
+			cout << "Error: BC_Init failed (not enough memory)!" << endl;
 		MPI_Finalize();
 		exit(1);
-	};
+	}
 
 	if (BD_rank == BD_masterRank) {
 		BC_Master();
@@ -44,7 +43,7 @@ int main(int argc, char* argv[]) {
 	}
 	MPI_Finalize();
 	return 0;
-};
+}
 
 static void BC_Master() {// The head function of the master process.
 	PC_bsf_ParametersOutput(BD_order.parameter);
@@ -62,8 +61,8 @@ static void BC_Master() {// The head function of the master process.
 		};
 		BC_MasterMap(!BD_EXIT);
 		BC_MasterReduce();
-
-
+		//
+		//
 		switch (BD_jobCase) {
 			case 0:
 			PC_bsf_ProcessResults(
@@ -132,7 +131,7 @@ static void BC_Master() {// The head function of the master process.
 		default:
 			cout << "BC_Master: Undefined job type!" << endl;
 			break;
-		};
+		}
 
 		BD_iterCounter++;
 	} while (!BD_exit);
@@ -410,19 +409,16 @@ static void BC_ProcessExtendedReduceList_3(BT_extendedReduceElem_T_3* reduceList
 
 static void BC_Init(bool* success) {// Performs the memory allocation and the initialization of the skeleton data structures and variables.
 	cout << setprecision(PP_BSF_PRECISION);
-
 	int offset, first, last, subListSize;
-
+	/// 
 	PC_bsf_SetListSize(&BD_listSize);
 	if (BD_size > BD_listSize + 1) {
 		if (BD_rank == 0) cout << "Error: MPI_SIZE must be < Map List Size + 2 =" << BD_listSize + 2 << endl;
 		MPI_Finalize();
 		exit(1);
 	};
-
 	BD_masterRank = BD_size - 1;
 	BD_numOfWorkers = BD_size - 1;
-
 	PC_bsf_SetInitParameter(&(BD_order.parameter));
 
 	if (BD_rank == BD_masterRank) {

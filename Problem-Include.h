@@ -6,9 +6,11 @@ Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 #pragma once
-#include <iostream>
+#include <cassert>
 #include <iomanip>
+#include <iostream>
 #include <limits.h>
 #include <math.h>
 #include <omp.h>
 #include <stdio.h>
+#include <string>

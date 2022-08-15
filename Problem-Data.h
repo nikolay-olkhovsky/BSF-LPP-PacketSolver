@@ -11,26 +11,26 @@ using namespace std;
 //========================== Problem variables ====================================
 static int		PD_m;						// Current number of inequalities
 static int		PD_n;						// Curtrent space dimension
-static double	PD_Gap = PP_GAP_MAX;		// Minimal distance to polytope
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
-static bool		PD_newInequalities;
-static double	PD_ObjectiveVectorLength;	// Length of objective vector
-static bool		PD_pointIn;
+static bool		PD_pointIn;					// Point is inside polytope
 static double	PD_shiftLength;				// Shift length
-static int		PD_state;
+static int		PD_state;					// State of Job Dispatcher (see PC_bsf_JobDispatcher)
+static int		PD_indexToBlock;			// Index of variable to block
+static int		PD_firstFvI;				// Index of first zero coefficient of objective function
+static bool		PD_UtilizeFreeVariables;
 //========================== Problem structures ====================================
 static PT_matrix_T PD_A;					// Matrix of coefficients of inequalities 
 static PT_column_T PD_b;					// Column of the constant terms of the system Ax <= PD_b
 static PT_vector_T PD_c;					// Objective Function Coefficients
+static PT_vector_T PD_apexPoint;			// Apex point
 static PT_vector_T PD_basePoint;			// Base point on Polytope
 static PT_vector_T PD_direction;			// Unit vector to set shift direction
 static PT_vector_T PD_hi;					// Higher bound
 static PT_vector_T PD_lo;					// Lower bound
-static PT_vector_T PD_objectiveUnitVector;	// = c/||c||
-static PT_vector_T PD_objectiveVector;		// = PD_objectiveUnitVector * PP_OBJECTIVE_VECTOR_LENGTH
+static PT_vector_T PD_unitObjVector;		// = c/||c||
+static PT_vector_T PD_objVector;			// = PD_unitObjectiveVector * PP_OBJECTIVE_VECTOR_LENGTH
 static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
-static PT_vector_T PD_relaxationVector;
 //========================== Input/Output ====================================
 static string PD_problemName;
 //
