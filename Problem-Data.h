@@ -17,8 +17,11 @@ static bool		PD_pointIn;					// Point is inside polytope
 static double	PD_shiftLength;				// Shift length
 static int		PD_state;					// State of Job Dispatcher (see PC_bsf_JobDispatcher)
 static int		PD_indexToBlock;			// Index of variable to block
-static int		PD_firstFvI;				// Index of first zero coefficient of objective function
-static bool		PD_UtilizeFreeVariables;
+static int		PD_firstZcvI;				// Index of first zero-costs variable
+static int		PD_firstLcvI;				// Index of first low-costs variable
+static double	PD_minCostPercentile;		// Minimum cost percentile
+static bool		PD_utilizeLowCostVariables;
+static double	PD_baseObjValue;
 //========================== Problem structures ====================================
 static PT_matrix_T PD_A;					// Matrix of coefficients of inequalities 
 static PT_column_T PD_b;					// Column of the constant terms of the system Ax <= PD_b
