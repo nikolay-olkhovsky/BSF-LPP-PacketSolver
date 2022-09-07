@@ -12,7 +12,9 @@ void PC_bsf_CopyParameter(
 	PT_bsf_parameter_T* parameterOutP
 ); 
 void PC_bsf_Init(
-	bool* success
+	bool* success,
+	int argc, 
+	char* argv[]
 );
 void PC_bsf_IterOutput(
 	PT_bsf_reduceElem_T* reduceResult, 

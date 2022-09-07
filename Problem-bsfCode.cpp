@@ -23,10 +23,19 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 		parameter->x[j] = PD_basePoint[j];
 };
 
-void PC_bsf_Init(bool* success) {
+void PC_bsf_Init(bool* success, int argc, char* argv[]) {
+	filesystem::path folder;
+	stringstream ss;
 	PD_state = PP_STATE_START;
+	PD_skip = atoi(argv[1]);
 
 	PD_problemName = PP_PROBLEM_NAME;
+	ss << PP_TRACE_PREFIX << setw(5) << setfill('0') << PD_skip;
+	PD_problemFolder = ss.str() + "/";
+	folder.assign(PP_PATH);
+	folder.append(PD_problemFolder);
+	filesystem::create_directory(folder);
+
 	*success = LoadMatrixFormat();
 	if (*success == false)
 		return;
@@ -36,6 +45,7 @@ void PC_bsf_Init(bool* success) {
 	//
 
 	PD_MTX_File_so = PP_PATH;
+	PD_MTX_File_so += PD_problemFolder;
 	PD_MTX_File_so += PP_MTX_PREFIX;
 	PD_MTX_File_so += PD_problemName;
 	PD_MTX_File_so += PP_MTX_POSTFIX_SO;
@@ -407,7 +417,7 @@ void PC_bsf_JobDispatcher(
 		//WriteTrace(PD_basePoint);
 
 		/*debug*/
-		if (BSF_sv_iterCounter % PP_BSF_TRACE_COUNT == 0) 
+		//if (BSF_sv_iterCounter % PP_BSF_TRACE_COUNT == 0) 
 			SavePoint(PD_basePoint, x0_File, t);
 		/*end debug*/
 
@@ -499,6 +509,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 #else
 	cout << "Map List is not Fragmented." << endl;
 #endif
+	cout << "Number of skipped problems:\t" << PD_skip << endl;
 	cout << "Before conversion: m =\t" << PP_M << "\tn = " << PP_N << endl;
 	cout << "After conversion:  m =\t" << PD_m << "\tn = " << PD_n << endl;
 	cout << "Eps Min Dir Length:\t" << PP_EPS_DIR_LENGTH << endl;
@@ -799,10 +810,12 @@ static bool LoadMatrixFormat() {
 	int nor,	// Number of matrix rows
 		noc,	// Number of matrix columns
 		non,	// Number of non-zero elements
-		noe;	// Number of equations
+		noe,	// Number of equations
+		packetSize; // Number of problems in packet file
 	const char* mtxFile;
 	FILE* stream;// Input stream
 	char str[80] = { '\0' };
+	char _buff[1024];
 	char* chr = str;
 
 	//--------------- Reading A ------------------
@@ -821,6 +834,22 @@ static bool LoadMatrixFormat() {
 	}
 
 	SkipComments(stream);
+	fscanf(stream, "%d", &packetSize);
+	if (packetSize < 1 || PD_skip > packetSize) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Wrong packet size in " << mtxFile << " (PD_skip = " << PD_skip << ")" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < PD_skip; i++)
+	{
+		fscanf(stream, "%d%d%d", &nor, &noc, &non);
+		fgets(_buff, 1024, stream);
+		for(int j = 0; j < non; j++)
+			fgets(_buff, 1024, stream);
+	}
+
 	if (fscanf(stream, "%d%d%d", &nor, &noc, &non) < 3) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout
@@ -913,6 +942,22 @@ for (int i = 0; i < PD_m; i++) {
 	}
 
 	SkipComments(stream);
+	fscanf(stream, "%d", &packetSize);
+	if (packetSize < 1 || PD_skip > packetSize) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Wrong packet size in " << mtxFile << " (PD_skip = " << PD_skip << ")" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < PD_skip; i++)
+	{
+		fscanf(stream, "%d%d", &nor, &noc);
+		fgets(_buff, 1024, stream);
+		for (int j = 0; j < nor; j++)
+			fgets(_buff, 1024, stream);
+	}
+
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout
@@ -964,6 +1009,22 @@ for (int i = 0; i < PD_m; i++)
 	}
 
 	SkipComments(stream);
+	fscanf(stream, "%d", &packetSize);
+	if (packetSize < 1 || PD_skip > packetSize) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Wrong packet size in " << mtxFile << " (PD_skip = " << PD_skip << ")" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < PD_skip; i++)
+	{
+		fscanf(stream, "%d%d", &nor, &noc);
+		fgets(_buff, 1024, stream);
+		for (int j = 0; j < nor; j++)
+			fgets(_buff, 1024, stream);
+	}
+
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout
@@ -1011,6 +1072,22 @@ for (int i = 0; i < PD_m; i++)
 	}
 
 	SkipComments(stream);
+	fscanf(stream, "%d", &packetSize);
+	if (packetSize < 1 || PD_skip > packetSize) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Wrong packet size in " << mtxFile << " (PD_skip = " << PD_skip << ")" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < PD_skip; i++)
+	{
+		fscanf(stream, "%d%d", &nor, &noc);
+		fgets(_buff, 1024, stream);
+		for (int j = 0; j < nor; j++)
+			fgets(_buff, 1024, stream);
+	}
+
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout
@@ -1063,6 +1140,22 @@ cout << endl;
 	}
 
 	SkipComments(stream);
+	fscanf(stream, "%d", &packetSize);
+	if (packetSize < 1 || PD_skip > packetSize) {
+		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
+			cout
+			<< "Wrong packet size in " << mtxFile << " (PD_skip = " << PD_skip << ")" << endl;
+		return false;
+	}
+
+	for (int i = 0; i < PD_skip; i++)
+	{
+		fscanf(stream, "%d%d", &nor, &noc);
+		fgets(_buff, 1024, stream);
+		for (int j = 0; j < nor; j++)
+			fgets(_buff, 1024, stream);
+	}
+
 	if (fscanf(stream, "%d%d", &nor, &noc) < 2) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout
@@ -1100,6 +1193,7 @@ cout << endl;
 
 	//--------------- Reading x0 ------------------
 	PD_MTX_File_x0 = PP_PATH;
+	PD_MTX_File_x0 += PD_problemFolder;
 	PD_MTX_File_x0 += PP_MTX_PREFIX;
 	PD_MTX_File_x0 += PD_problemName;
 	PD_MTX_File_x0 += PP_MTX_POSTFIX_X0;
@@ -1330,17 +1424,18 @@ static bool Conversion() { // Transformation to inequalities & dimensionality re
 static bool SavePoint(PT_vector_T x, const char* filename, double elapsedTime) {
 	FILE* stream;
 
-	stream = fopen(filename, "w");
+	stream = fopen(filename, "a");
 	if (stream == NULL) {
 		if (BSF_sv_mpiRank == BSF_sv_mpiMaster)
 			cout << "Failure of opening file '" << filename << "'.\n";
 		return false;
 	}
 
-	fprintf(stream, "%c Elapsed time: %.0f\n%d %d\n", '%', elapsedTime, PD_n, 1);
+	//fprintf(stream, "%c Elapsed time: %.0f\n%d %d\n", '%', elapsedTime, PD_n, 1);
 
 	for (int j = 0; j < PD_n; j++)
-		fprintf(stream, "%.14f\n", x[j]);
+		fprintf(stream, "%.14f\t", x[j]);
+	fprintf(stream, "\n");
 
 	fclose(stream);
 	return true;

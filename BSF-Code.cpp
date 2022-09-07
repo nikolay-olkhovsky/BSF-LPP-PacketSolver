@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
 	unsigned success;
 	BC_MpiRun();
 	BD_success = true;
-	PC_bsf_Init(&BD_success);
+	PC_bsf_Init(&BD_success, argc, argv);
 	MPI_Allreduce(&BD_success, &success, 1, MPI_UNSIGNED, MPI_LAND, MPI_COMM_WORLD);
 	if (!success) {
 		if (BD_rank == BD_masterRank) 

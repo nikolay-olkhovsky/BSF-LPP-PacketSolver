@@ -11,6 +11,7 @@ using namespace std;
 //========================== Problem variables ====================================
 static int		PD_m;						// Current number of inequalities
 static int		PD_n;						// Curtrent space dimension
+static int		PD_skip;					// Number of problems in .pack file to skip
 static int		PD_numShiftsSameLength;		// Number of shifts with the same length
 static int		PD_numDetDir;				// Number of sequential states "Determine Direction"
 static bool		PD_pointIn;					// Point is inside polytope
@@ -36,6 +37,7 @@ static PT_vector_T PD_objVector;			// = PD_unitObjectiveVector * PP_OBJECTIVE_VE
 static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
 //========================== Input/Output ====================================
 static string PD_problemName;
+static string PD_problemFolder;
 //
 //
 // 

@@ -11,7 +11,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_BSF_PRECISION (PP_SETW/2)// Decimal precision on output
 #define PP_BSF_MAX_MPI_SIZE 400		// Maximal MPI Size
 //#define PP_BSF_ITER_OUTPUT			// If PP_BSF_ITER_OUTPUT is defined then Iteration Output is performed
-#define PP_BSF_TRACE_COUNT	50	// Each PP_BSF_TRACE_COUNT-th iteration to be outputted
+#define PP_BSF_TRACE_COUNT	5	// Each PP_BSF_TRACE_COUNT-th iteration to be outputted
 //#define PP_BSF_TRACE_COUNT	500	// Each PP_BSF_TRACE_COUNT-th iteration to be outputted
 #define PP_BSF_MAX_JOB_CASE 2
 //--------------------------- OpenMP Parameters ---------------------------
