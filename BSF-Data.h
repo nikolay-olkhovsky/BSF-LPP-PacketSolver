@@ -20,10 +20,10 @@ This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky
 // ========================= Variables ========================
 static int	BD_elemsPerWorker;	// Number of elements per worker
 static bool BD_exit;			// Indicator of ending the calculations
-static int	BD_jobCase = 0;		// Default value
+static int	BD_jobCase;			// Default value
 static int	BD_listSize;		// Size of the list
 static int	BD_masterRank;		// Rank of Master = Number of MPI processes - 1
-static int	BD_newJobCase = 0;	// Default value
+static int	BD_newJobCase;		// Default value
 static int	BD_numOfWorkers;	// Number of Workers = Number of MPI processes - 1
 static int	BD_rank;			// Rank of the current process MPI 
 static int	BD_size;			// Number of MPI processes
@@ -47,3 +47,4 @@ static MPI_Status					BD_status[PP_BSF_MAX_MPI_SIZE];		// MPI ststus
 static MPI_Request					BD_request[PP_BSF_MAX_MPI_SIZE];	// MPI request
 static int							BD_sublistSize[PP_BSF_MAX_MPI_SIZE];// SubList Sizes for Workers
 static int							BD_offset[PP_BSF_MAX_MPI_SIZE];		// List offsets for Workers
+static bool							BD_successList[PP_BSF_MAX_MPI_SIZE];// List of success RESET signals for Workers

@@ -10,11 +10,12 @@ This source code is a part of BSF Skeleton (https://github.com/leonid-sokolinsky
 void PC_bsf_CopyParameter(
 	PT_bsf_parameter_T parameterIn,
 	PT_bsf_parameter_T* parameterOutP
-); 
+);
+void PC_bsf_Start(
+	bool* success
+);
 void PC_bsf_Init(
-	bool* success,
-	int argc, 
-	char* argv[]
+	bool* success
 );
 void PC_bsf_IterOutput(
 	PT_bsf_reduceElem_T* reduceResult, 

@@ -14,5 +14,3 @@ This source code has been produced with using BSF-skeleton
 #include <omp.h>
 #include <stdio.h>
 #include <string>
-#include <sstream>
-#include <filesystem>

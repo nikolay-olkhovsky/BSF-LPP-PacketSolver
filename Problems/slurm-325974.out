@@ -1,0 +1,35 @@
+=================================================== Problem parameters ====================================================
+Number of Workers: 11
+Number of Threads: 12
+Dimension: n = 3
+Number of Random Inegualities: 6
+Length of hypercube edge ALPHA = 200
+Radius of large hypersphere RHO = 100
+Radius of small hypersphere THETA = 50
+Maximal acceptable likeness of equations MAX_LIKE = 0.6
+Minimal acceptable shift MIN_SHIFT = 100
+Objective Function:	     150     100      50
+=============================================
+Time: 0.463408
+Iterations: 11679
+Failures 'Not between' = 5647822
+Failures 'Obtuse angle to objective' = 1993042
+Failures 'Similar' = 128459
+-----------------------------------
+LPP is saved into file '/home/olkhovskiina/output/test_10_12/lpp.txt'.
+-----------------------------------
+-----------------------------------
+Matrix A is saved into file '/home/olkhovskiina/output/test_10_12/lp_dataset_A.mtx.pack'.
+-----------------------------------
+-----------------------------------
+Column b is saved into file '/home/olkhovskiina/output/test_10_12/lp_dataset_b.mtx.pack'.
+-----------------------------------
+-----------------------------------
+Vector c is saved into file '/home/olkhovskiina/output/test_10_12/lp_dataset_c.mtx.pack'.
+-----------------------------------
+-----------------------------------
+Values HI are saved into file '/home/olkhovskiina/output/test_10_12/lp_dataset_hi.mtx.pack'.
+-----------------------------------
+-----------------------------------
+Values LO are saved into file '/home/olkhovskiina/output/test_10_12/lp_dataset_lo.mtx.pack'.
+-----------------------------------
