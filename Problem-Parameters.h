@@ -7,7 +7,7 @@ Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
-//#define PP_DEBUG
+#define PP_DEBUG
 //#define PP_PATH "D:/OneDrive/_private/Программы/BSF/BSF Target/Problems/"
 //#define PP_PATH "Problems/"
 #define PP_PATH "C:/TEMP/"
@@ -412,7 +412,8 @@ This source code has been produced with using BSF-skeleton
 #define PP_ADD_FLAG						PP_N
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
-//#define PP_MATRIX_OUTPUT	// To output Matrix
+#define PP_TRACE_LIMIT 50	// Maximum points in a problem trace
+#define PP_MATRIX_OUTPUT	// To output Matrix
 #define PP_SETW 18
 //
 //------------------------- Matrix format ----------------

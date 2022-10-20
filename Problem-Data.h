@@ -24,6 +24,8 @@ static double	PD_objF_u;
 static double	PD_objF_w;
 static int		PD_problemCounter;			// Index of the problem in the package
 static int		PD_problemsNumber;			// Number of problems in the package
+static PT_float_T PD_problemTrace[PP_TRACE_LIMIT][PP_N];	// Trace points for a problem in the package
+static int		PD_traceIndex;				// Index of current trace point
 //========================== Variables from functions ====================================
 static PT_vector_T relaxationVector;		// used in PC_bsf_ProcessResults
 static PT_float_T fvA[PP_MM];				// used in Conversion

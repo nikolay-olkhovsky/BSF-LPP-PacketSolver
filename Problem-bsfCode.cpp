@@ -37,6 +37,8 @@ void PC_bsf_Start(bool* success) {
 void PC_bsf_Init(bool* success) {
 	PD_state = PP_STATE_START;
 	PD_indexToBlock = 0;
+	PD_pointIn = false;
+	PD_traceIndex = 0;
 
 	// Init variables for Conversion
 	for (int i = 0; i < PP_MM; i++) {
@@ -66,6 +68,9 @@ void PC_bsf_Init(bool* success) {
 		PD_objVector[i] = 0.;
 		PD_objI[i] = 0;
 	}
+	for (int i = 0; i < PP_TRACE_LIMIT; i++)
+		for (int j = 0; j < PP_N; j++)
+			PD_problemTrace[i][j] = 0.;
 
 /*debug5*	
 	if (PP_MODE_BLOCK_HCV_VARIABLE && PP_MODE_USE_LCV_VARIABLE) {
@@ -105,8 +110,8 @@ void PC_bsf_Init(bool* success) {
 
 	MakeObjVector(PD_c, PD_objVector);
 	UnitObjVector(PD_unitObjVector);
-	Vector_MultiplyByNumber(PD_unitObjVector, PP_SIGMA_TO_APEX, PD_direction);
-	Vector_Addition(PD_u, PD_direction, PD_apexPoint);
+	//Vector_MultiplyByNumber(PD_unitObjVector, PP_SIGMA_TO_APEX, PD_direction);
+	//Vector_Addition(PD_u, PD_direction, PD_apexPoint);
 	PD_problemCounter++;
 	//if(BSF_sv_mpiRank == 1) *success = false; // Test crush
 }
@@ -796,8 +801,10 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(parameter->x, PD_u);
 		PD_objF_u = ObjF(PD_u);
 
-		WriteTrace(PD_u);
-
+		//WriteTrace(PD_u);
+		if(PD_traceIndex < PP_TRACE_LIMIT)
+			Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+		
 		/*debug8*
 //		if (PD_objF_u + PP_EPS_OBJ > PP_EXACT_OBJ_VALUE) {
 		if (fabs(PD_objF_u - PP_EXACT_OBJ_VALUE) <= PP_EPS_OBJ) {
@@ -958,10 +965,6 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "\tF(x) = " << setw(PP_SETW) << ObjF(PD_x0);
 	cout << endl;
 	cout << "-------------------------------------------" << endl;
-	if (fprintf(PD_stream_tr, "\n") < 1) {
-		cout << "Can't write new line to " << PD_MTX_File_tr << endl;
-		return;
-	}
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
@@ -1359,7 +1362,7 @@ static bool OpenDataFiles() {
 		cout << "Failure of opening file '" << PD_MTX_File_tr << "'.\n";
 		return false;
 	}
-	if (fprintf(PD_stream_tr, "%d", PD_problemsNumber) < 1) {
+	if (fprintf(PD_stream_tr, "%d\n", PD_problemsNumber) < 1) {
 		//
 		cout
 			<< "Can't write package size to " << mtxFile << endl;
@@ -1381,9 +1384,16 @@ static bool CloseDataFiles() {
 }
 
 inline void WriteTrace(PT_vector_T x) {
-	for (int j = 0; j < PD_n; j++)
-		fprintf(PD_stream_tr, " %.14f\t", x[j]);
-	fprintf(PD_stream_tr, "\n");
+	fprintf(PD_stream_tr, "%d\t", PD_traceIndex);
+	fprintf(PD_stream_tr, "%d\n", PD_n);
+	for (int i = 0; i < PD_traceIndex; i++) {
+		for(int j = 0; j < PD_n; j++)
+			fprintf(PD_stream_tr, "%.14f\t", PD_problemTrace[i][j]);
+		fprintf(PD_stream_tr, "\n");
+	}
+//	for (int j = 0; j < PD_n; j++)
+//		fprintf(PD_stream_tr, " %.14f\t", x[j]);
+//	fprintf(PD_stream_tr, "\n");
 }
 
 static bool LoadMatrixFormat() {
@@ -2298,6 +2308,11 @@ inline void ProblemOutput(double elapsedTime) {
 	Vector_EpsZero(PD_u);
 	if (SavePoint(PD_u, solutionFile, elapsedTime))
 		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
+
+	if (PD_traceIndex < 1)
+		Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+	WriteTrace(PD_u);
+
 	cout << "Solution:\t";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_u[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
