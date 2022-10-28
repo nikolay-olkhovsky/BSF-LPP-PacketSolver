@@ -397,7 +397,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_ZERO_DIR				1E-5	// Accuracy of zero value for determining direction vector coordinates
 #define PP_EXACT_OBJ_VALUE			50000	// Exact maximum value of objective function
 #define PP_INFINITY					1E+308	// Highest bound in *_hi.mtx
-#define PP_SIGMA_TO_APEX			2000	// Distance from apex base to apex point
+#define PP_SIGMA_TO_APEX			0	// Distance from apex base to apex point
 #define PP_LOW_COST_PERCENTILE		0.01	// Percentile for low cost variable (must be in [0,1])
 #define PP_GAP						1E-2	// Maximum gap from polytope surface (not too small!!!)
 #define PP_OBJECTIVE_VECTOR_LENGTH	0.1		// Length of Objective Vector
@@ -410,6 +410,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_MAX_NUM_SHIFTS_SAME_LENGTH	5 // Maximal number of shifts with the same length
 #define PP_MAX_ITER_COUNT				40000 // Maximal count of iterations
 #define PP_ADD_FLAG						PP_N
+//#define PP_RANDOM_X0
 //-------------------------- Input/Outpoot Parameters ---------------------------
 #define PP_OUTPUT_LIMIT	8	// Number of Elements to output
 #define PP_TRACE_LIMIT 50	// Maximum points in a problem trace

@@ -22,12 +22,19 @@ using namespace std;
 void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 	for (int j = 0; j < PD_n; j++) // Generating initial approximation
 		parameter->x[j] = PD_u[j];
+
+	parameter->b = 0.;
+	parameter->indexToBlock = 0;
+	parameter->m = 0;
+	parameter->sign = 0;
 };
 
 void PC_bsf_Start(bool* success) {
 	PD_problemName = PP_PROBLEM_NAME;
 	PD_problemCounter = 0;
 	//PD_problemsNumber = 2;
+
+	srand(time(0));
 
 	*success = OpenDataFiles();
 	if (*success == false)
@@ -107,6 +114,18 @@ void PC_bsf_Init(bool* success) {
 			break;
 		}
 	}
+
+#ifdef PP_RANDOM_X0
+	do {
+		for (int i = 0; i < PP_N; i++) {
+			PD_x0[i] = static_cast <double> (rand()) / (static_cast <double> (RAND_MAX / 300.));
+		}
+	} while (PointInPolytope_s(PD_x0));
+	//PD_x0[rand() % 3] += 200.;
+	PD_x0[0] = 0.;
+	//PD_x0[1] = 200.;
+	//PD_x0[2] = 200.;
+#endif
 
 	MakeObjVector(PD_c, PD_objVector);
 	UnitObjVector(PD_unitObjVector);
@@ -208,6 +227,10 @@ void PC_bsf_ProcessResults(
 			//PD_problemCounter++;
 		}
 		else {
+			if (PD_traceIndex < 1) {
+				Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+			}
+			WriteTrace(PD_u);
 			CloseDataFiles();
 			*exit = true;
 		}
@@ -241,6 +264,10 @@ void PC_bsf_ProcessResults_1(
 			//PD_problemCounter++;
 		}
 		else {
+			if (PD_traceIndex < 1) {
+				Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+			}
+			WriteTrace(PD_u);
 			CloseDataFiles();
 			*exit = true;
 		}
@@ -315,8 +342,9 @@ void PC_bsf_JobDispatcher(
 
 		if (PointInPolytope_s(PD_x0)) {
 			// PD_x0 случайная точка с положительными координатами вне базового многогранника
-			// Vector_Copy(PD_x0, PD_apexPoint);
+			//Vector_Copy(PD_x0, PD_apexPoint);
 			ApexPoint(PD_x0, PD_apexPoint); // Удалить
+			
 #ifdef PP_DEBUG
 			cout << "Apex point:\t";
 			for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++)
@@ -366,6 +394,8 @@ void PC_bsf_JobDispatcher(
 			return;
 		}
 
+		// Write first point to trace
+		Vector_Copy(parameter->x, PD_problemTrace[PD_traceIndex++]);
 		/*debug2*
 		SavePoint(parameter->x, x0_File, t);
 		cout << "==================> F(t) = " << setw(PP_SETW) << ObjF(parameter->x) << endl;
@@ -391,7 +421,7 @@ void PC_bsf_JobDispatcher(
 
 		// Preparations for determining direction
 		Vector_PlusEquals(parameter->x, PD_objVector);
-		assert(!PointInPolytope_s(parameter->x));
+		//assert(!PointInPolytope_s(parameter->x));
 
 		*job = PP_JOB_PSEUDOPOJECTION;
 		PD_state = PP_STATE_DETERMINE_DIRECTION;
@@ -737,6 +767,10 @@ void PC_bsf_JobDispatcher(
 				*exit = false;
 			}
 			else {
+				if (PD_traceIndex < 1) {
+					Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+				}
+				WriteTrace(PD_u);
 				CloseDataFiles();
 				*exit = true;
 			}
@@ -801,9 +835,9 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(parameter->x, PD_u);
 		PD_objF_u = ObjF(PD_u);
 
-		//WriteTrace(PD_u);
 		if(PD_traceIndex < PP_TRACE_LIMIT)
 			Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+		//WriteTrace(PD_u);
 		
 		/*debug8*
 //		if (PD_objF_u + PP_EPS_OBJ > PP_EXACT_OBJ_VALUE) {
@@ -814,6 +848,10 @@ void PC_bsf_JobDispatcher(
 				//PD_problemCounter++;
 			}
 			else {
+				if (PD_traceIndex < 1) {
+					Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+				}
+				WriteTrace(PD_u);
 				CloseDataFiles();
 				*exit = true;
 			}
@@ -2306,11 +2344,12 @@ inline void ProblemOutput(double elapsedTime) {
 	//
 	const char* solutionFile = PD_MTX_File_so.c_str();
 	Vector_EpsZero(PD_u);
-	if (SavePoint(PD_u, solutionFile, elapsedTime))
-		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
+//	if (SavePoint(PD_u, solutionFile, elapsedTime))
+//		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
 
-	if (PD_traceIndex < 1)
+	if (PD_traceIndex < 1) {
 		Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
+	}
 	WriteTrace(PD_u);
 
 	cout << "Solution:\t";

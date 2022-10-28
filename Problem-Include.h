@@ -15,3 +15,4 @@ This source code has been produced with using BSF-skeleton
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <ctime>
