@@ -340,10 +340,13 @@ void PC_bsf_JobDispatcher(
 		objF_lcv = 0;
 		landingNo = 0;
 
-		if (PointInPolytope_s(PD_x0)) {
+		PD_x0[0] = 0.;
+		PD_x0[1] = 0.;
+		PD_x0[2] = 201.;
+		if (!PointInPolytope_s(PD_x0)) {
 			// PD_x0 случайна€ точка с положительными координатами вне базового многогранника
-			//Vector_Copy(PD_x0, PD_apexPoint);
-			ApexPoint(PD_x0, PD_apexPoint); // ”далить
+			Vector_Copy(PD_x0, PD_apexPoint);
+			//ApexPoint(PD_x0, PD_apexPoint); // ”далить
 			
 #ifdef PP_DEBUG
 			cout << "Apex point:\t";
@@ -835,7 +838,7 @@ void PC_bsf_JobDispatcher(
 		Vector_Copy(parameter->x, PD_u);
 		PD_objF_u = ObjF(PD_u);
 
-		if(PD_traceIndex < PP_TRACE_LIMIT)
+		if(PD_traceIndex < PP_TRACE_LIMIT && Distance(PD_u, PD_problemTrace[PD_traceIndex-1]) > PP_EPS_DISTANCE)
 			Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
 		//WriteTrace(PD_u);
 		
@@ -2334,6 +2337,8 @@ inline void MakeObjVector(PT_vector_T c, PT_vector_T objVector) { // Calculating
 }
 
 inline void ProblemOutput(double elapsedTime) {
+	PT_float_T tracePointsDistance = 0.;
+
 	cout << "=============================================" << endl;
 	cout << "Elapsed time: " << elapsedTime << endl;
 	cout << "Iterations: " << BSF_sv_iterCounter << endl;
@@ -2347,7 +2352,8 @@ inline void ProblemOutput(double elapsedTime) {
 //	if (SavePoint(PD_u, solutionFile, elapsedTime))
 //		cout << "Solution is saved into the file '" << solutionFile << "'." << endl;
 
-	if (PD_traceIndex < 1) {
+	tracePointsDistance = Distance(PD_u, PD_problemTrace[PD_traceIndex - 1]);
+	if (PD_traceIndex < 1 || tracePointsDistance > EPS && tracePointsDistance <= PP_EPS_DISTANCE) {
 		Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
 	}
 	WriteTrace(PD_u);

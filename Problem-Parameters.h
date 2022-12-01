@@ -7,7 +7,7 @@ Author: Leonid B. Sokolinsky
 This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
-#define PP_DEBUG
+//#define PP_DEBUG
 //#define PP_PATH "D:/OneDrive/_private/Программы/BSF/BSF Target/Problems/"
 //#define PP_PATH "Problems/"
 #define PP_PATH "C:/TEMP/"
@@ -395,6 +395,7 @@ This source code has been produced with using BSF-skeleton
 #define PP_EPS_SHIFT				EPS		// Minimal shift to stop motion
 #define PP_EPS_ZERO_COMPARE			EPS		// Zero comparison precision
 #define PP_EPS_ZERO_DIR				1E-5	// Accuracy of zero value for determining direction vector coordinates
+#define PP_EPS_DISTANCE				1.0		// Minimal distance between points in a trace
 #define PP_EXACT_OBJ_VALUE			50000	// Exact maximum value of objective function
 #define PP_INFINITY					1E+308	// Highest bound in *_hi.mtx
 #define PP_SIGMA_TO_APEX			0	// Distance from apex base to apex point
