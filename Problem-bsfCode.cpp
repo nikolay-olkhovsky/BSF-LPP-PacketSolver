@@ -1254,7 +1254,7 @@ inline PT_float_T ObjF(PT_vector_T x) {
 	return s;
 }
 
-static bool OpenDataFiles() {
+inline bool OpenDataFiles() {
 	const char* mtxFile;
 	int packageSize = 0;
 
@@ -1413,7 +1413,7 @@ static bool OpenDataFiles() {
 	return true;
 }
 
-static bool CloseDataFiles() {
+inline bool CloseDataFiles() {
 	fclose(PD_stream_A);
 	fclose(PD_stream_b);
 	fclose(PD_stream_c);
@@ -1437,7 +1437,7 @@ inline void WriteTrace(PT_vector_T x) {
 //	fprintf(PD_stream_tr, "\n");
 }
 
-static bool LoadMatrixFormat() {
+inline bool LoadMatrixFormat() {
 	int nor,	// Number of matrix rows
 		noc,	// Number of matrix columns
 		non,	// Number of non-zero elements
@@ -2086,7 +2086,7 @@ static bool LoadMatrixFormat() {
 //	return true;
 //}
 
-static bool Conversion() { // Transformation to inequalities & dimensionality reduction
+inline bool Conversion() { // Transformation to inequalities & dimensionality reduction
 //	static PT_float_T fvA[PP_MM]; // Free variable coefficients
 //	static bool Flag[PP_N];		// Flags of free variables to delete
 //	static int fvEqI;	// Inequality index of free variable
@@ -2268,7 +2268,7 @@ static bool Conversion() { // Transformation to inequalities & dimensionality re
 	return true;
 }
 
-static bool SavePoint(PT_vector_T x, const char* filename, double elapsedTime) {
+inline bool SavePoint(PT_vector_T x, const char* filename, double elapsedTime) {
 	FILE* stream;
 
 	stream = fopen(filename, "w");
