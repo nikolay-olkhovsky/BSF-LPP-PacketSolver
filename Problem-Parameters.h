@@ -8,7 +8,6 @@ This source code has been produced with using BSF-skeleton
 ==============================================================================*/
 //-------------------------- Compilation Modes -----------------------
 //#define PP_DEBUG
-//#define PP_PATH "D:/OneDrive/_private/Программы/BSF/BSF Target/Problems/"
 //#define PP_PATH "Problems/"
 #define PP_PATH "C:/TEMP/"
 #define PP_WITHOUT_APEX
