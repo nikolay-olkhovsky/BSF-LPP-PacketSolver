@@ -1425,6 +1425,7 @@ inline bool CloseDataFiles() {
 }
 
 inline void WriteTrace(PT_vector_T x) {
+	fprintf(PD_stream_tr, "%d\t", PD_problemCounter);
 	fprintf(PD_stream_tr, "%d\t", PD_traceIndex);
 	fprintf(PD_stream_tr, "%d\n", PD_n);
 	for (int i = 0; i < PD_traceIndex; i++) {
@@ -1438,7 +1439,8 @@ inline void WriteTrace(PT_vector_T x) {
 }
 
 inline bool LoadMatrixFormat() {
-	int nor,	// Number of matrix rows
+	int pid,	// Problem ID
+		nor,	// Number of matrix rows
 		noc,	// Number of matrix columns
 		non,	// Number of non-zero elements
 		noe;	// Number of equations
@@ -1453,10 +1455,18 @@ inline bool LoadMatrixFormat() {
 	PD_MTX_File_A += PP_MTX_POSTFIX_A;
 	mtxFile = PD_MTX_File_A.c_str();
 	SkipComments(PD_stream_A);
-	if (fscanf(PD_stream_A, "%d%d%d", &nor, &noc, &non) < 3) {
+	if (fscanf(PD_stream_A, "%d%d%d%d", &pid, &nor, &noc, &non) < 3) {
 		//
 		cout
 			<< "Unexpected end of file " << mtxFile << endl;
+		return false;
+	}
+
+	if (pid != PD_problemCounter+1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile 
+			<< ": " << pid << " read (" << PD_problemCounter+1 << " expected)" << endl;
 		return false;
 	}
 
@@ -1535,12 +1545,21 @@ inline bool LoadMatrixFormat() {
 	mtxFile = PD_MTX_File_b.c_str();
 
 	SkipComments(PD_stream_b);
-	if (fscanf(PD_stream_b, "%d%d", &nor, &noc) < 2) {
+	if (fscanf(PD_stream_b, "%d%d%d", &pid, &nor, &noc) < 2) {
 		//
 		cout
 			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
+
+	if (pid != PD_problemCounter + 1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile
+			<< ": " << pid << " read (" << PD_problemCounter + 1 << " expected)" << endl;
+		return false;
+	}
+
 	if (noe != nor) {
 		//
 		cout
@@ -1577,12 +1596,21 @@ inline bool LoadMatrixFormat() {
 	mtxFile = PD_MTX_File_lo.c_str();
 
 	SkipComments(PD_stream_lo);
-	if (fscanf(PD_stream_lo, "%d%d", &nor, &noc) < 2) {
+	if (fscanf(PD_stream_lo, "%d%d%d", &pid, &nor, &noc) < 2) {
 		//
 		cout
 			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
+
+	if (pid != PD_problemCounter + 1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile
+			<< ": " << pid << " read (" << PD_problemCounter + 1 << " expected)" << endl;
+		return false;
+	}
+
 	if (nor != PD_n) {
 		//
 		cout
@@ -1614,12 +1642,21 @@ inline bool LoadMatrixFormat() {
 	mtxFile = PD_MTX_File_c.c_str();
 
 	SkipComments(PD_stream_c);
-	if (fscanf(PD_stream_c, "%d%d", &nor, &noc) < 2) {
+	if (fscanf(PD_stream_c, "%d%d%d", &pid, &nor, &noc) < 2) {
 		//
 		cout
 			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
+
+	if (pid != PD_problemCounter + 1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile
+			<< ": " << pid << " read (" << PD_problemCounter + 1 << " expected)" << endl;
+		return false;
+	}
+
 	if (nor != PD_n) {
 		//
 		cout
@@ -1657,12 +1694,21 @@ inline bool LoadMatrixFormat() {
 	mtxFile = PD_MTX_File_hi.c_str();
 
 	SkipComments(PD_stream_hi);
-	if (fscanf(PD_stream_hi, "%d%d", &nor, &noc) < 2) {
+	if (fscanf(PD_stream_hi, "%d%d%d", &pid, &nor, &noc) < 2) {
 		//
 		cout
 			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
+
+	if (pid != PD_problemCounter + 1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile
+			<< ": " << pid << " read (" << PD_problemCounter + 1 << " expected)" << endl;
+		return false;
+	}
+
 	if (nor != PD_n) {
 		//
 		cout
@@ -1704,12 +1750,21 @@ inline bool LoadMatrixFormat() {
 		return true;
 	}
 	SkipComments(PD_stream_x0);
-	if (fscanf(PD_stream_x0, "%d%d", &nor, &noc) < 2) {
+	if (fscanf(PD_stream_x0, "%d%d%d", &pid, &nor, &noc) < 2) {
 		//
 		cout
 			<< "Unexpected end of file'" << mtxFile << "'." << endl;
 		return false;
 	}
+
+	if (pid != PD_problemCounter + 1) {
+		//
+		cout
+			<< "Wrong problem ID in " << mtxFile
+			<< ": " << pid << " read (" << PD_problemCounter + 1 << " expected)" << endl;
+		return false;
+	}
+
 	if (nor != PD_n) {
 		//
 		cout
