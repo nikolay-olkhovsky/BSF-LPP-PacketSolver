@@ -9,7 +9,7 @@ This source code has been produced with using BSF-skeleton
 //-------------------------- Compilation Modes -----------------------
 //#define PP_DEBUG
 //#define PP_PATH "Problems/"
-#define PP_PATH "C:/EXTRACTED/"
+#define PP_PATH "C:/CROSSFIELD/"
 #define PP_WITHOUT_APEX
 //=========================== Problem Parameters =========================
 /**#define PP_PROBLEM_NAME		"afiro"		 //========

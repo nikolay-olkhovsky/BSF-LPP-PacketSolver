@@ -1429,6 +1429,7 @@ inline bool CloseDataFiles() {
 }
 
 inline void WriteTrace(PT_vector_T x) {
+	if (PD_traceIndex > PP_TRACE_LIMIT) PD_traceIndex = PP_TRACE_LIMIT;
 	fprintf(PD_stream_tr, "%d\t", PD_problemCounter);
 	fprintf(PD_stream_tr, "%d\t", PD_traceIndex);
 	fprintf(PD_stream_tr, "%d\n", PD_n);
