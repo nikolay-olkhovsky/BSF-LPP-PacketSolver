@@ -9,7 +9,7 @@ This source code has been produced with using BSF-skeleton
 //-------------------------- Compilation Modes -----------------------
 //#define PP_DEBUG
 //#define PP_PATH "Problems/"
-#define PP_PATH "C:/TEMP/"
+#define PP_PATH "C:/EXTRACTED/"
 #define PP_WITHOUT_APEX
 //=========================== Problem Parameters =========================
 /**#define PP_PROBLEM_NAME		"afiro"		 //========
@@ -385,8 +385,8 @@ This source code has been produced with using BSF-skeleton
 #define PP_MODE_USE_LCV_VARIABLE	true	// utilize low cost and zero variables
 //------------------------------------------------------------------/**/
 /**/#define PP_PROBLEM_NAME		"dataset" //==========================================
-#define PP_M 10		// Number of equations (number of rows in *.mtx)
-#define PP_N 13		// Number of variables (number of cols in *.mtx)
+#define PP_M 11		// Number of equations (number of rows in *.mtx)
+#define PP_N 14		// Number of variables (number of cols in *.mtx)
 //------------------------------------------------------------------
 #define EPS							1E-8
 #define PP_EPS_DIR_LENGTH			EPS		// Minimal Length of Direction Vector

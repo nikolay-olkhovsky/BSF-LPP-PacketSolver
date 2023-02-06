@@ -944,8 +944,11 @@ void PC_bsf_JobDispatcher(
 }
 
 void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
+#ifdef PP_BSF_ITER_OUTPUT
 	cout << "=================================================== BSF Target ====================================================" << endl;
+#endif
 	cout << "Problem ID: " << PD_problemCounter << endl;
+#ifdef PP_BSF_ITER_OUTPUT
 	cout << "Problem name: " << PD_problemName << endl;
 	cout << "Number of Workers: " << BSF_sv_numOfWorkers << endl;
 #ifdef PP_BSF_OMP
@@ -1006,6 +1009,7 @@ void PC_bsf_ParametersOutput(PT_bsf_parameter_T parameter) {
 	cout << "\tF(x) = " << setw(PP_SETW) << ObjF(PD_x0);
 	cout << endl;
 	cout << "-------------------------------------------" << endl;
+#endif // PP_BSF_ITER_OUTPUT
 }
 
 void PC_bsf_CopyParameter(PT_bsf_parameter_T parameterIn, PT_bsf_parameter_T* parameterOutP) {
@@ -2393,7 +2397,7 @@ inline void MakeObjVector(PT_vector_T c, PT_vector_T objVector) { // Calculating
 
 inline void ProblemOutput(double elapsedTime) {
 	PT_float_T tracePointsDistance = 0.;
-
+#ifdef PP_BSF_ITER_OUTPUT
 	cout << "=============================================" << endl;
 	cout << "Elapsed time: " << elapsedTime << endl;
 	cout << "Iterations: " << BSF_sv_iterCounter << endl;
@@ -2401,7 +2405,7 @@ inline void ProblemOutput(double elapsedTime) {
 	cout << "Exact objective value:   " << setw(PP_SETW) << PP_EXACT_OBJ_VALUE << endl;
 	cout << "Relative error = " << fabs(PD_objF_u - PP_EXACT_OBJ_VALUE) / fabs(PP_EXACT_OBJ_VALUE) << endl;
 	cout << "=============================================" << endl;
-	//
+#endif // PP_BSF_ITER_OUTPUT
 	const char* solutionFile = PD_MTX_File_so.c_str();
 	Vector_EpsZero(PD_u);
 //	if (SavePoint(PD_u, solutionFile, elapsedTime))
@@ -2412,7 +2416,7 @@ inline void ProblemOutput(double elapsedTime) {
 		Vector_Copy(PD_u, PD_problemTrace[PD_traceIndex++]);
 	}
 	WriteTrace(PD_u);
-
+#ifdef PP_BSF_ITER_OUTPUT
 	cout << "Solution:\t";
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_u[j];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
@@ -2421,6 +2425,7 @@ inline void ProblemOutput(double elapsedTime) {
 	for (int j = 0; j < PF_MIN(PP_OUTPUT_LIMIT, PD_n); j++) cout << setw(PP_SETW) << PD_u[PD_objI[j]];
 	if (PP_OUTPUT_LIMIT < PD_n) cout << "	...";
 	cout << endl;
+#endif // PP_BSF_ITER_OUTPUT
 }
 
 inline void SkipComments(FILE* stream) {

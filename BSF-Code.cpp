@@ -66,8 +66,9 @@ int main(int argc, char* argv[]) {
 static void BC_Master() {// The head function of the master process.
 	do {
 		if (BD_jobCase == BD_JOB_RESET) {			// Init data on Master
-
+#ifdef PP_BSF_ITER_OUTPUT
 			cout << BD_rank << ": RESET job started!" << endl;
+#endif // PP_BSF_ITER_OUTPUT
 			BD_success = true;
 			PC_bsf_Init(&BD_success);
 			if (!BD_success) {
@@ -113,7 +114,9 @@ static void BC_Master() {// The head function of the master process.
 		switch (BD_jobCase) {
 			case BD_JOB_RESET:
 				// Process results of RESET
+#ifdef PP_BSF_ITER_OUTPUT
 				cout << BD_rank << ": result of RESET job is " << BD_success << endl;
+#endif // PP_BSF_ITER_OUTPUT
 				if (!BD_success) {
 					cout << BD_rank << ": RESET if FAILED! Aborting... " << endl;
 					BD_exit = BD_EXIT;
