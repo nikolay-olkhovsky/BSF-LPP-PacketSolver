@@ -13,6 +13,7 @@ This source code has been produced with using BSF-skeleton
 #include <math.h>
 #include <omp.h>
 #include <stdio.h>
+#include <inicpp.h>
 #include <string>
 #include <vector>
 #include <ctime>

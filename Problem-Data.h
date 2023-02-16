@@ -24,15 +24,15 @@ static double	PD_objF_u;
 static double	PD_objF_w;
 static int		PD_problemCounter;			// Index of the problem in the package
 static int		PD_problemsNumber;			// Number of problems in the package
-static PT_float_T PD_problemTrace[PP_TRACE_LIMIT][PP_N];	// Trace points for a problem in the package
+static PT_float_T PD_problemTrace[PP_TRACE_LIMIT][PP_MAX_N];	// Trace points for a problem in the package
 static int		PD_traceIndex;				// Index of current trace point
 //========================== Variables from functions ====================================
 static PT_vector_T relaxationVector;		// used in PC_bsf_ProcessResults
-static PT_float_T fvA[PP_MM];				// used in Conversion
-static bool Flag[PP_N];						// used in Conversion
+static PT_float_T fvA[PP_MAX_MM];				// used in Conversion
+static bool Flag[PP_MAX_N];						// used in Conversion
 static int fvEqI;							// used in Conversion
 static bool single;							// used in Conversion
-static bool PD_delete[PP_MM];				// used in Conversion
+static bool PD_delete[PP_MAX_MM];				// used in Conversion
 //========================== Problem structures ====================================
 static PT_matrix_T PD_A;					// Matrix of coefficients of inequalities 
 static PT_column_T PD_b;					// Column of the constant terms of the system Ax <= PD_b
@@ -45,7 +45,7 @@ static PT_vector_T PD_hi;					// Higher bound
 static PT_vector_T PD_lo;					// Lower bound
 static PT_vector_T PD_unitObjVector;		// = c/||c||
 static PT_vector_T PD_objVector;			// = PD_unitObjectiveVector * PP_OBJECTIVE_VECTOR_LENGTH
-static int PD_objI[PP_N];					// Index of objective variables in absolute descending order
+static int PD_objI[PP_MAX_N];					// Index of objective variables in absolute descending order
 //========================== Input/Output ====================================
 static string PD_problemName;
 //

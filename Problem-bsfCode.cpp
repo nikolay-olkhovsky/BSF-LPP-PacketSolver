@@ -30,6 +30,27 @@ void PC_bsf_SetInitParameter(PT_bsf_parameter_T* parameter) {
 };
 
 void PC_bsf_Start(bool* success) {
+	ini::IniFile config;
+
+	config.load(PP_FILE_INI);
+	PP_PATH = config["general"]["PP_PATH"].as<string>();
+	PP_PROBLEM_NAME = config["general"]["PP_PROBLEM_NAME"].as<string>();
+	PP_MTX_PREFIX = config["general"]["PP_MTX_PREFIX"].as<string>();
+	PP_MTX_POSTFIX_A = config["general"]["PP_MTX_POSTFIX_A"].as<string>();
+	PP_MTX_POSTFIX_B = config["general"]["PP_MTX_POSTFIX_B"].as<string>();
+	PP_MTX_POSTFIX_LO = config["general"]["PP_MTX_POSTFIX_LO"].as<string>();
+	PP_MTX_POSTFIX_HI = config["general"]["PP_MTX_POSTFIX_HI"].as<string>();
+	PP_MTX_POSTFIX_C = config["general"]["PP_MTX_POSTFIX_C"].as<string>();
+	PP_MTX_POSTFIX_X0 = config["general"]["PP_MTX_POSTFIX_X0"].as<string>();
+	PP_MTX_POSTFIX_TR = config["general"]["PP_MTX_POSTFIX_TR"].as<string>();
+	PP_MTX_POSTFIX_SO = config["general"]["PP_MTX_POSTFIX_SO"].as<string>();
+
+	PP_N = config["solver"]["PP_MAT_N"].as<int>();
+	PP_M = config["solver"]["PP_MAT_M"].as<int>();
+
+	PP_MM = (PP_MODE_BLOCK_HCV_VARIABLE ? 2 * PP_M + 3 * PP_N - 1 : 2 * PP_M + 2 * PP_N);
+	PP_ADD_FLAG = PP_N;
+
 	PD_problemName = PP_PROBLEM_NAME;
 	PD_problemCounter = 0;
 	//PD_problemsNumber = 2;
